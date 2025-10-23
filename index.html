@@ -8,38 +8,30 @@
 <style>
   :root{
     --green:#00ff4c; --amber:#ffb020; --red:#ff3b30;
-
-    --radius:18px;
-    --gap:clamp(12px,2vw,20px);
-    --pad:clamp(12px,2vw,18px);
-    --track-h:72px;
-    --knob-h:56px; --knob-w:96px; --knob-radius:14px;
-
+    --radius:18px; --gap:clamp(12px,2vw,20px); --pad:clamp(12px,2vw,18px);
+    --track-h:72px; --knob-h:56px; --knob-w:96px; --knob-radius:14px;
     --frame-glow:transparent;
   }
 
-  /* Themes */
   html[data-theme="dark"]{  --bg:#000;    --panel:#0f1115; --panel-2:#141820; --ink:#e8eef5; --muted:#9fb2c9; }
   html[data-theme="light"]{ --bg:#f8fafc; --panel:#e9eef6; --panel-2:#dae3ef; --ink:#1d2330; --muted:#4c5a6b; }
 
-  /* Frame halo (set via data-accent; no storage) */
   html[data-accent="green"]{ --frame-glow: color-mix(in oklab, var(--green) 85%, transparent); }
   html[data-accent="amber"]{ --frame-glow: color-mix(in oklab, var(--amber) 85%, transparent); }
   html[data-accent="red"]  { --frame-glow: color-mix(in oklab, var(--red)   85%, transparent); }
 
-  *{ box-sizing:border-box }
-  html,body{ height:100% }
+  *{box-sizing:border-box}
+  html,body{height:100%}
   body{
     margin:0; background:var(--bg); color:var(--ink);
     font-family:"Saira", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
     display:grid; place-items:center;
 
-    /* Touch-first for iframes */
     -webkit-user-select:none; user-select:none;
     -webkit-touch-callout:none;
-    touch-action: manipulation;              /* single taps, no gestures */
+    touch-action: manipulation;     /* taps only */
     pointer-events:auto;
-    cursor: default !important;              /* force arrow, not hand */
+    cursor: default !important;     /* always arrow */
   }
 
   .frame{
@@ -82,7 +74,8 @@
     padding:8px 12px; border-radius:999px; font-weight:600;
     opacity:.8; transition:opacity .15s, background .15s;
     -webkit-tap-highlight-color:transparent;
-    touch-action:manipulation; pointer-events:auto;
+    touch-action:manipulation;
+    pointer-events:auto;
     cursor: default !important;
   }
   .btn.active{ opacity:1; background:rgba(255,255,255,.10); }
@@ -102,24 +95,16 @@
   .row{ display:grid; grid-template-columns:160px 1fr; align-items:center; gap:14px; }
   .label-text{ font-weight:700; letter-spacing:.3px; color:var(--ink); }
 
-  /* ====== Native radio + label track ====== */
-  .opt{ position:relative; }
-  .opt input{
-    position:absolute; inset:0; width:100%; height:100%;
-    opacity:0; pointer-events:none; /* visually hidden but keeps native behavior */
-  }
-  .opt label{
-    display:block; position:relative;
-    height:var(--track-h);
+  /* ===== Slider visuals ===== */
+  .track{
+    position:relative; height:var(--track-h);
     background:linear-gradient(180deg, rgba(255,255,255,.14), rgba(0,0,0,.18));
-    border-radius:calc(var(--knob-radius) + 10px);
     border:1px solid rgba(255,255,255,.18);
+    border-radius:calc(var(--knob-radius) + 10px);
     overflow:hidden;
-    -webkit-tap-highlight-color:transparent;
-    touch-action:manipulation;
-    cursor: default !important;   /* arrow, not hand */
+    cursor: default !important;
   }
-  html[data-theme="light"] .opt label{
+  html[data-theme="light"] .track{
     background:linear-gradient(180deg, rgba(255,255,255,.7), rgba(0,0,0,.08));
     border-color:rgba(0,0,0,.15);
   }
@@ -129,12 +114,12 @@
 
   .rail::before{
     content:""; position:absolute; inset:0; border-radius:inherit;
-    transform-origin:left center; transform:scaleX(0); transition:transform .12s ease;
+    transform-origin:left center; transform:scaleX(var(--pct,0));
+    transition:transform .12s ease;
   }
-  /* Fill color per option when checked */
-  #avail-green:checked + label .rail::before{ background:var(--green); transform:scaleX(1); }
-  #avail-amber:checked + label .rail::before{ background:var(--amber); transform:scaleX(1); }
-  #avail-red:checked   + label .rail::before{ background:var(--red);   transform:scaleX(1); }
+  .track[data-id="green"] .rail::before{ background:var(--green); }
+  .track[data-id="amber"] .rail::before{ background:var(--amber); }
+  .track[data-id="red"]   .rail::before{ background:var(--red); }
 
   .knob{
     position:absolute; top:50%; translate:0 -50%;
@@ -148,10 +133,22 @@
     box-shadow: inset 0 1px 0 rgba(255,255,255,.7), inset 0 -6px 20px rgba(0,0,0,.12), 0 4px 18px rgba(0,0,0,.12);
     border-color:rgba(0,0,0,.12);
   }
-  .opt{ --left-on: calc(100% - var(--knob-w) - 12px); }
-  #avail-green:checked + label .knob,
-  #avail-amber:checked + label .knob,
-  #avail-red:checked   + label .knob{ left: var(--left-on); }
+
+  /* ===== BIG endpoint tap zones (no drag) ===== */
+  .hit{
+    position:absolute; top:0; bottom:0;
+    width:45%; /* generous endpoint zones, ~10% center dead zone */
+    touch-action:manipulation; pointer-events:auto;
+    cursor: default !important;
+    background: transparent;
+  }
+  .hit.off{ left:0; }
+  .hit.on{ right:0; }
+
+  /* positions */
+  .track{ --left-off: 12px; --left-on: calc(100% - var(--knob-w) - 12px); }
+  .track[data-state="on"]  .knob{ left: var(--left-on); }
+  .track[data-state="off"] .knob{ left: var(--left-off); }
 </style>
 </head>
 <body>
@@ -172,109 +169,107 @@
         <div class="card">
           <div class="row">
             <div class="label-text">Available</div>
-            <div class="opt">
-              <input type="radio" name="avail" id="avail-green" value="green" />
-              <label for="avail-green" aria-label="Available">
-                <div class="rail"></div><div class="knob"></div>
-              </label>
+            <div class="track" data-id="green" data-state="off" aria-label="Available">
+              <div class="rail"></div>
+              <div class="knob"></div>
+              <div class="hit off"  data-action="off"></div>
+              <div class="hit on"   data-action="on"></div>
             </div>
           </div>
         </div>
-
         <!-- AMBER -->
         <div class="card">
           <div class="row">
             <div class="label-text">Important Only</div>
-            <div class="opt">
-              <input type="radio" name="avail" id="avail-amber" value="amber" />
-              <label for="avail-amber" aria-label="Important Only">
-                <div class="rail"></div><div class="knob"></div>
-              </label>
+            <div class="track" data-id="amber" data-state="off" aria-label="Important Only">
+              <div class="rail"></div>
+              <div class="knob"></div>
+              <div class="hit off"  data-action="off"></div>
+              <div class="hit on"   data-action="on"></div>
             </div>
           </div>
         </div>
-
         <!-- RED -->
         <div class="card">
           <div class="row">
             <div class="label-text">Do Not Disturb</div>
-            <div class="opt">
-              <input type="radio" name="avail" id="avail-red" value="red" />
-              <label for="avail-red" aria-label="Do Not Disturb">
-                <div class="rail"></div><div class="knob"></div>
-              </label>
+            <div class="track" data-id="red" data-state="off" aria-label="Do Not Disturb">
+              <div class="rail"></div>
+              <div class="knob"></div>
+              <div class="hit off"  data-action="off"></div>
+              <div class="hit on"   data-action="on"></div>
             </div>
           </div>
         </div>
-
-        <!-- Hidden "none" radio so we can turn everything off with a tap -->
-        <input type="radio" name="avail" id="avail-none" value="none" style="position:absolute;opacity:0;pointer-events:none;" />
       </div>
+
     </div>
   </div>
 
 <script>
-  // No storage. Minimal JS:
-  // - Toggle theme (optional)
-  // - Allow "all off" by tapping the active label
-  // - Update frame halo via data-accent for visuals
+  // No storage. Single-pointerdown endpoints.
+  const $$ = (q, r=document)=>[...r.querySelectorAll(q)];
+  const tracks = $$('.track');
 
-  const byId = (id)=>document.getElementById(id);
-  const btnLight = byId('btnLight');
-  const btnDark  = byId('btnDark');
-
-  btnLight.addEventListener('pointerdown', (e)=>{ e.preventDefault(); document.documentElement.setAttribute('data-theme','light'); btnLight.classList.add('active'); btnDark.classList.remove('active'); }, {capture:true});
-  btnDark .addEventListener('pointerdown', (e)=>{ e.preventDefault(); document.documentElement.setAttribute('data-theme','dark');  btnDark.classList.add('active');  btnLight.classList.remove('active'); }, {capture:true});
-
-  const radios = ['green','amber','red'].map(v=>byId('avail-'+v));
-  const none   = byId('avail-none');
-
-  // Update halo on change
-  function updateAccent(){
-    const r = radios.find(r=>r.checked);
-    if(r){ document.documentElement.setAttribute('data-accent', r.value); }
-    else { document.documentElement.removeAttribute('data-accent'); }
+  function setAccent(color){ // purely visual frame glow
+    if(color) document.documentElement.setAttribute('data-accent', color);
+    else document.documentElement.removeAttribute('data-accent');
   }
-  radios.forEach(r => r.addEventListener('change', updateAccent));
 
-  // Allow tapping the active track to turn "off"
+  function currentActive(){
+    const t = tracks.find(tr => tr.dataset.state === 'on');
+    return t ? t.dataset.id : null;
+  }
+
+  function setActive(idOrNull){
+    tracks.forEach(tr=>{
+      const on = idOrNull && tr.dataset.id === idOrNull;
+      tr.dataset.state = on ? 'on' : 'off';
+      tr.style.setProperty('--pct', on ? 1 : 0);
+    });
+    setAccent(idOrNull || null);
+    // Optional host bridge:
+    // try{ window.parent.postMessage({widget:'availability', state:idOrNull||'none'}, '*'); }catch(e){}
+  }
+
+  // One pointerdown handler on the document (capture) so we beat host layers.
   document.addEventListener('pointerdown', (e)=>{
-    const lab = e.target.closest('label');
-    if(!lab) return;
-    e.preventDefault(); // stay tap-first; avoid ghost clicks
-    const forId = lab.getAttribute('for');
-    const input = forId && byId(forId);
-    if(!input) return;
-    if(input.checked){
-      // was active -> turn all off
-      none.checked = true;
-      updateAccent();
+    e.preventDefault?.(); // avoid ghost clicks / gestures
+    const hit = e.target.closest?.('.hit, .btn');
+    if(!hit) return;
+
+    // Theme buttons
+    if(hit.classList.contains('btn')){
+      const light = hit.id === 'btnLight';
+      document.documentElement.setAttribute('data-theme', light ? 'light' : 'dark');
+      document.getElementById('btnLight').classList.toggle('active', light);
+      document.getElementById('btnDark').classList.toggle('active', !light);
       return;
     }
-    // activate this one
-    input.checked = true;
-    input.dispatchEvent(new Event('change', {bubbles:true}));
+
+    // Endpoint taps
+    const track = hit.closest('.track');
+    const id = track.dataset.id;
+    const action = hit.dataset.action; // 'on' or 'off'
+
+    if(action === 'on'){
+      setActive(id);            // turn THIS color on
+    }else{
+      setActive(null);          // left endpoint always turns everything off
+    }
   }, {capture:true});
 
-  // Ensure arrow cursor + touch behavior even if host injects CSS
+  // Defensive hardening against host CSS
   (function harden(){
     document.documentElement.style.pointerEvents = 'auto';
     document.body.style.pointerEvents = 'auto';
-    document.querySelectorAll('label,.btn').forEach(el=>{
-      el.style.cursor = 'default';
+    document.querySelectorAll('.hit,.btn,.track').forEach(el=>{
+      el.style.pointerEvents = 'auto';
       el.style.touchAction = 'manipulation';
+      el.style.cursor = 'default';
       el.style.webkitTapHighlightColor = 'transparent';
     });
   })();
-
-  // Optional: post state to host (comment in if you want)
-  // function post() {
-  //   const r = radios.find(r=>r.checked);
-  //   const state = r ? r.value : 'none';
-  //   try { window.parent && window.parent.postMessage({widget:'availability', state}, '*'); } catch(e){}
-  // }
-  // radios.forEach(r => r.addEventListener('change', post));
-  // none.addEventListener('change', post);
 </script>
 </body>
 </html>
