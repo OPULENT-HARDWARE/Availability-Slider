@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
 <title>Availability — by OPULENT HARDWARE</title>
 <link href="https://fonts.googleapis.com/css2?family=Saira:wght@400;600;700;800&display=swap" rel="stylesheet">
-
 <style>
   :root{
     --green:#00ff4c;
@@ -20,13 +19,12 @@
     --knob-w: 96px;
     --knob-radius: 14px;
 
-    /* frame halo color (set via [data-accent]) */
     --frame-glow: transparent;
   }
 
   /* THEME */
   html[data-theme="dark"]{
-    --bg:#000;                /* page behind the widget */
+    --bg:#000;
     --panel:#0f1115;
     --panel-2:#141820;
     --ink:#e8eef5;
@@ -40,7 +38,7 @@
     --muted:#4c5a6b;
   }
 
-  /* Halo colors (widget frame only; safe inside iCUE iframe) */
+  /* Frame halo */
   html[data-accent="green"]{ --frame-glow: color-mix(in oklab, var(--green) 85%, transparent); }
   html[data-accent="amber"]{ --frame-glow: color-mix(in oklab, var(--amber) 85%, transparent); }
   html[data-accent="red"]  { --frame-glow: color-mix(in oklab, var(--red)   85%, transparent); }
@@ -48,31 +46,23 @@
   *{box-sizing:border-box}
   html,body{height:100%}
   body{
-    margin:0;
-    background:var(--bg);
-    color:var(--ink);
+    margin:0; background:var(--bg); color:var(--ink);
     font-family:"Saira", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-    display:grid;
-    place-items:center;
-
-    /* Touch-friendly defaults for iCUE’s embedded webview */
+    display:grid; place-items:center;
     -webkit-user-select:none; user-select:none;
     -webkit-touch-callout:none;
+    pointer-events:auto; /* ensure iframe can interact */
   }
 
-  /* Widget frame (gets the colored halo) */
   .frame{
     position:relative;
     width:min(920px, 94vw);
     border-radius: calc(var(--radius) + 6px);
     overflow:hidden;
-
     background:linear-gradient(180deg, var(--panel), var(--panel-2));
     border:1px solid rgba(255,255,255,.06);
     box-shadow: 0 12px 36px rgba(0,0,0,.45);
-    transition: box-shadow .28s ease;
-
-    /* Important in some iCUE builds so touches are not swallowed */
+    transition: box-shadow .24s ease;
     pointer-events:auto;
   }
   html[data-accent] .frame{
@@ -90,14 +80,15 @@
     margin-bottom: var(--gap);
   }
   .title{ font-weight:700; letter-spacing:.2px; font-size: clamp(16px, 2.4vw, 22px); }
-  .title span { font-weight:600; opacity:0.9; font-size:0.92em; }
-  .title .oh { font-weight:800; letter-spacing:0.5px; }
+  .title .by { font-weight:600; opacity:.9; font-size:.92em; }
+  .title .oh { font-weight:800; letter-spacing:.5px; }
 
   .modes{
     display:flex; gap:8px;
     background: rgba(255,255,255,.05);
     border:1px solid rgba(255,255,255,.10);
     border-radius:999px; padding:6px;
+    pointer-events:auto;
   }
   html[data-theme="light"] .modes{
     background: rgba(0,0,0,.05);
@@ -108,7 +99,7 @@
     padding:8px 12px; border-radius:999px; font-weight:600; cursor:pointer;
     opacity:.75; transition:opacity .2s, background .2s;
     -webkit-tap-highlight-color: transparent;
-    touch-action: manipulation;       /* single-tap OK; no drag needed */
+    touch-action: manipulation;
     pointer-events:auto;
   }
   .modes button[aria-pressed="true"]{ background:rgba(255,255,255,.10); opacity:1; }
@@ -139,12 +130,9 @@
     background:linear-gradient(180deg, rgba(255,255,255,.14), rgba(0,0,0,.18));
     border-radius: calc(var(--knob-radius) + 10px);
     border:1px solid rgba(255,255,255,.18); overflow:hidden;
-
-    /* TOUCH: we only need taps, not pans */
-    touch-action: manipulation;
+    touch-action: manipulation;         /* tap-only; no panning */
     -webkit-tap-highlight-color: transparent;
-    cursor:pointer;
-    pointer-events:auto;
+    cursor:pointer; pointer-events:auto;
   }
   html[data-theme="light"] .track{
     background:linear-gradient(180deg, rgba(255,255,255,.7), rgba(0,0,0,.08));
@@ -158,14 +146,13 @@
   .rail::before{
     content:""; position:absolute; inset:0; border-radius:inherit;
     transform-origin:left center; transform: scaleX(var(--pct, 0));
-    transition: transform .18s ease;
+    transition: transform .16s ease;
   }
-  /* TRACK COLOR ON for active slider only */
   .track[data-state="green"] .rail::before{ background: var(--green); }
   .track[data-state="amber"] .rail::before{ background: var(--amber); }
   .track[data-state="red"]   .rail::before{ background: var(--red); }
 
-  /* Knob (visual only; single-tap toggles, no drag) */
+  /* Knob (visual only; taps handled on .track for simplicity) */
   .knob{
     position:absolute; top:50%; translate:0 -50%;
     height: var(--knob-h); width: var(--knob-w); border-radius: var(--knob-radius);
@@ -173,15 +160,14 @@
     box-shadow: inset 0 1px 0 rgba(255,255,255,.22), inset 0 -6px 20px rgba(0,0,0,.34), 0 4px 18px rgba(0,0,0,.25);
     border:1px solid rgba(255,255,255,.20);
     outline: 2px solid transparent;
-    pointer-events:none; /* important: taps go to the track for simple activation */
-    transition: left .18s ease;
+    pointer-events:none;  /* ensures the track gets the tap in iCUE */
+    transition: left .16s ease;
   }
   html[data-theme="light"] .knob{
     box-shadow: inset 0 1px 0 rgba(255,255,255,.7), inset 0 -6px 20px rgba(0,0,0,.12), 0 4px 18px rgba(0,0,0,.12);
     border-color: rgba(0,0,0,.12);
   }
 
-  /* ON/OFF Positions */
   .track{ --left-off: 12px; --left-on: calc(100% - var(--knob-w) - 12px); }
   .knob[data-pos="off"]{ left: var(--left-off); }
   .knob[data-pos="on"]{  left: var(--left-on); }
@@ -192,40 +178,37 @@
     <div class="content">
       <div class="header">
         <div class="title">
-          Availability <span>by <span class="oh">OPULENT HARDWARE</span></span>
+          Availability <span class="by">by <span class="oh">OPULENT HARDWARE</span></span>
         </div>
-        <div class="modes" role="group" aria-label="Theme">
+        <div class="modes" role="group" aria-label="Theme" id="modes">
           <button id="btnLight" aria-pressed="false" title="Light mode">Light</button>
           <button id="btnDark"  aria-pressed="true"  title="Dark mode (pure black)">Dark</button>
         </div>
       </div>
 
       <div class="sliders" id="sliders">
-        <!-- GREEN -->
         <div class="card">
           <div class="row">
             <div class="label">Available</div>
-            <div class="track" data-state="green" data-id="green" aria-label="Available slider">
+            <div class="track" data-state="green" data-id="green" aria-label="Available">
               <div class="rail"></div>
               <div class="knob" data-pos="off"></div>
             </div>
           </div>
         </div>
-        <!-- AMBER -->
         <div class="card">
           <div class="row">
             <div class="label">Important Only</div>
-            <div class="track" data-state="amber" data-id="amber" aria-label="Important only slider">
+            <div class="track" data-state="amber" data-id="amber" aria-label="Important Only">
               <div class="rail"></div>
               <div class="knob" data-pos="off"></div>
             </div>
           </div>
         </div>
-        <!-- RED -->
         <div class="card">
           <div class="row">
             <div class="label">Do Not Disturb</div>
-            <div class="track" data-state="red" data-id="red" aria-label="Do not disturb slider">
+            <div class="track" data-state="red" data-id="red" aria-label="Do Not Disturb">
               <div class="rail"></div>
               <div class="knob" data-pos="off"></div>
             </div>
@@ -236,44 +219,35 @@
   </div>
 
 <script>
-  /* Helpers */
+  /* Utilities */
   const $  = (q, r=document) => r.querySelector(q);
   const $$ = (q, r=document) => [...r.querySelectorAll(q)];
 
-  /* Theme: single-tap toggle buttons (click covers tap in modern webviews,
-     but we also listen to touchend with a tiny debounce to be bulletproof) */
-  const themeBtns = { light: $("#btnLight"), dark: $("#btnDark") };
+  /* Theme — pointerup for tap */
+  const btnLight = $("#btnLight");
+  const btnDark  = $("#btnDark");
 
   function setTheme(name){
     document.documentElement.setAttribute("data-theme", name);
-    themeBtns.light.setAttribute("aria-pressed", String(name==="light"));
-    themeBtns.dark .setAttribute("aria-pressed", String(name==="dark"));
+    btnLight.setAttribute("aria-pressed", String(name==="light"));
+    btnDark .setAttribute("aria-pressed", String(name==="dark"));
     try{ localStorage.setItem("availability.theme", name); }catch(e){}
-    // keep existing accent
     const acc = localStorage.getItem("availability.accent") || "none";
     setAccent(acc);
   }
-  (function initTheme(){
-    setTheme(localStorage.getItem("availability.theme") || "dark");
-  })();
+  setTheme(localStorage.getItem("availability.theme") || "dark");
 
-  function addSimpleTap(el, handler){
-    let last = 0;
-    el.addEventListener("click", (e)=> { handler(e); });
-    el.addEventListener("touchend", (e)=>{
-      const now = Date.now();
-      if (now - last < 300) return;  // prevent double fire (touchend->click)
-      last = now;
-      e.preventDefault();
-      handler(e);
-    }, {passive:false});
+  function addTap(el, handler){
+    // Pointer-first: pointerup is emitted for mouse + touch in CEF
+    el.addEventListener("pointerup", handler, {capture:true});
+    // Fallback (rare): also listen to click
+    el.addEventListener("click", handler, {capture:true});
   }
+  addTap(btnLight, ()=> setTheme("light"));
+  addTap(btnDark , ()=> setTheme("dark"));
 
-  addSimpleTap(themeBtns.light, ()=> setTheme("light"));
-  addSimpleTap(themeBtns.dark , ()=> setTheme("dark"));
-
-  /* Accent (halo around the frame only) */
-  function setAccent(accent){ // 'green' | 'amber' | 'red' | 'none'
+  /* Accent (frame halo only) */
+  function setAccent(accent){
     if(accent && accent !== "none"){
       document.documentElement.setAttribute("data-accent", accent);
       try{ localStorage.setItem("availability.accent", accent); }catch(e){}
@@ -283,9 +257,7 @@
     }
   }
 
-  /* State handling — exclusive activation with ability to turn all OFF.
-     Single tap (click or touch) on a track toggles that state ON;
-     tapping the same active one again turns everything OFF. */
+  /* State — exclusive ON, single tap toggles that one; tapping active turns all OFF */
   const tracks = $$(".track");
 
   function setActive(state){ // 'green'|'amber'|'red'|null
@@ -297,42 +269,33 @@
     });
     setAccent(state ? state : "none");
     try{ localStorage.setItem("availability.state", state || "none"); }catch(e){}
-    // Optional: notify host if desired
-    // try{ window.parent && window.parent.postMessage({widget:"availability", state: state||"none"}, "*"); }catch(e){}
+    // Optional: notify host iCUE
+    // try{ window.parent.postMessage({widget:"availability", state: state || "none"}, "*"); }catch(e){}
   }
 
   function currentState(){
-    const saved = localStorage.getItem("availability.state");
-    return (saved && saved !== "none") ? saved : null;
+    const s = localStorage.getItem("availability.state");
+    return (s && s !== "none") ? s : null;
   }
 
-  // Initialize from storage
-  (function initState(){
-    setActive(currentState());
-  })();
+  setActive(currentState());
 
-  // Attach simple single-tap activation to each track
   tracks.forEach(tr => {
-    addSimpleTap(tr, ()=>{
+    addTap(tr, (e)=>{
+      // if iCUE sends synthetic mouseup without pointerdown, still toggle
       const id = tr.dataset.id;
-      const isActive = (currentState() === id);
-      if (isActive){
-        setActive(null); // all off
-      } else {
-        setActive(id);   // make this the active one
-      }
+      const active = (currentState() === id);
+      setActive(active ? null : id);
+      // Do NOT preventDefault — let iCUE webview deliver clicks freely
     });
   });
 
-  // Maintain knob positions on resize (no drag, but keep consistency)
-  new ResizeObserver(() => {
-    tracks.forEach(tr=>{
-      const knob = $(".knob", tr);
-      // Position set purely by [data-pos] via CSS; no JS needed here.
-      // This observer just ensures layout updates have occurred.
-      void knob.offsetWidth; // reflow nudge (no-op, safe)
-    });
-  }).observe($(".frame"));
+  // Defensive: ensure everything is interactable if parent styles are odd
+  (function ensureInteractable(){
+    document.documentElement.style.pointerEvents = 'auto';
+    document.body.style.pointerEvents = 'auto';
+    $$(".track,.modes button").forEach(el => el.style.pointerEvents = 'auto');
+  })();
 </script>
 </body>
 </html>
