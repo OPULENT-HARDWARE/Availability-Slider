@@ -2,9 +2,10 @@
 <html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Availability Sliders — Opulent Hardware</title>
-<link href="https://fonts.googleapis.com/css2?family=Saira:wght@400;600;700&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<title>Availability — by OPULENT HARDWARE</title>
+<link href="https://fonts.googleapis.com/css2?family=Saira:wght@400;600;700;800&display=swap" rel="stylesheet">
+
 <style>
   :root{
     --green:#00ff4c;
@@ -23,9 +24,9 @@
     --frame-glow: transparent;
   }
 
-  /* THEME TOKENS */
+  /* THEME */
   html[data-theme="dark"]{
-    --bg:#000;                /* pure black page */
+    --bg:#000;                /* page behind the widget */
     --panel:#0f1115;
     --panel-2:#141820;
     --ink:#e8eef5;
@@ -39,7 +40,7 @@
     --muted:#4c5a6b;
   }
 
-  /* Vibrant halo color (same intensity for both themes) */
+  /* Halo colors (widget frame only; safe inside iCUE iframe) */
   html[data-accent="green"]{ --frame-glow: color-mix(in oklab, var(--green) 85%, transparent); }
   html[data-accent="amber"]{ --frame-glow: color-mix(in oklab, var(--amber) 85%, transparent); }
   html[data-accent="red"]  { --frame-glow: color-mix(in oklab, var(--red)   85%, transparent); }
@@ -53,23 +54,26 @@
     font-family:"Saira", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
     display:grid;
     place-items:center;
+
+    /* Touch-friendly defaults for iCUE’s embedded webview */
     -webkit-user-select:none; user-select:none;
+    -webkit-touch-callout:none;
   }
 
-  /* Widget frame – only this gets the colored halo */
+  /* Widget frame (gets the colored halo) */
   .frame{
     position:relative;
     width:min(920px, 94vw);
     border-radius: calc(var(--radius) + 6px);
     overflow:hidden;
 
-    /* inner styling (unchanged) */
     background:linear-gradient(180deg, var(--panel), var(--panel-2));
     border:1px solid rgba(255,255,255,.06);
-
-    /* neutral base shadow; halo added when [data-accent] present */
     box-shadow: 0 12px 36px rgba(0,0,0,.45);
     transition: box-shadow .28s ease;
+
+    /* Important in some iCUE builds so touches are not swallowed */
+    pointer-events:auto;
   }
   html[data-accent] .frame{
     box-shadow:
@@ -86,15 +90,14 @@
     margin-bottom: var(--gap);
   }
   .title{ font-weight:700; letter-spacing:.2px; font-size: clamp(16px, 2.4vw, 22px); }
-  .title span { font-weight:600; opacity:0.8; font-size:0.9em; }
-  .title span .oh { font-weight:800; letter-spacing:0.5px; }
+  .title span { font-weight:600; opacity:0.9; font-size:0.92em; }
+  .title .oh { font-weight:800; letter-spacing:0.5px; }
 
   .modes{
     display:flex; gap:8px;
     background: rgba(255,255,255,.05);
     border:1px solid rgba(255,255,255,.10);
     border-radius:999px; padding:6px;
-    pointer-events:auto;
   }
   html[data-theme="light"] .modes{
     background: rgba(0,0,0,.05);
@@ -105,7 +108,7 @@
     padding:8px 12px; border-radius:999px; font-weight:600; cursor:pointer;
     opacity:.75; transition:opacity .2s, background .2s;
     -webkit-tap-highlight-color: transparent;
-    touch-action: manipulation;
+    touch-action: manipulation;       /* single-tap OK; no drag needed */
     pointer-events:auto;
   }
   .modes button[aria-pressed="true"]{ background:rgba(255,255,255,.10); opacity:1; }
@@ -124,23 +127,21 @@
     border-color: rgba(0,0,0,.10);
   }
 
-  /* two columns: label + track (right-side pills removed) */
   .row{
     display:grid; grid-template-columns: 160px 1fr;
     align-items:center; gap:14px;
   }
   .label{ font-weight:700; letter-spacing:.3px; color:var(--ink); }
 
-  /* Track + rails */
+  /* Track */
   .track{
     position:relative; height: var(--track-h);
     background:linear-gradient(180deg, rgba(255,255,255,.14), rgba(0,0,0,.18));
     border-radius: calc(var(--knob-radius) + 10px);
     border:1px solid rgba(255,255,255,.18); overflow:hidden;
 
-    /* Touch essentials */
-    touch-action: none;
-    -webkit-user-select: none; user-select: none;
+    /* TOUCH: we only need taps, not pans */
+    touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
     cursor:pointer;
     pointer-events:auto;
@@ -157,14 +158,14 @@
   .rail::before{
     content:""; position:absolute; inset:0; border-radius:inherit;
     transform-origin:left center; transform: scaleX(var(--pct, 0));
-    transition: transform .2s ease;
+    transition: transform .18s ease;
   }
   /* TRACK COLOR ON for active slider only */
   .track[data-state="green"] .rail::before{ background: var(--green); }
   .track[data-state="amber"] .rail::before{ background: var(--amber); }
   .track[data-state="red"]   .rail::before{ background: var(--red); }
 
-  /* Knob */
+  /* Knob (visual only; single-tap toggles, no drag) */
   .knob{
     position:absolute; top:50%; translate:0 -50%;
     height: var(--knob-h); width: var(--knob-w); border-radius: var(--knob-radius);
@@ -172,23 +173,15 @@
     box-shadow: inset 0 1px 0 rgba(255,255,255,.22), inset 0 -6px 20px rgba(0,0,0,.34), 0 4px 18px rgba(0,0,0,.25);
     border:1px solid rgba(255,255,255,.20);
     outline: 2px solid transparent;
-    cursor:grab;
-
-    /* Touch essentials */
-    touch-action: none;
-    -webkit-user-select: none; user-select: none;
-    -webkit-tap-highlight-color: transparent;
-    pointer-events:auto;
+    pointer-events:none; /* important: taps go to the track for simple activation */
+    transition: left .18s ease;
   }
-
-  .knob:active{ cursor:grabbing; }
-
   html[data-theme="light"] .knob{
     box-shadow: inset 0 1px 0 rgba(255,255,255,.7), inset 0 -6px 20px rgba(0,0,0,.12), 0 4px 18px rgba(0,0,0,.12);
     border-color: rgba(0,0,0,.12);
   }
 
-  /* OFF (left) / ON (right) positions */
+  /* ON/OFF Positions */
   .track{ --left-off: 12px; --left-on: calc(100% - var(--knob-w) - 12px); }
   .knob[data-pos="off"]{ left: var(--left-off); }
   .knob[data-pos="on"]{  left: var(--left-on); }
@@ -207,14 +200,14 @@
         </div>
       </div>
 
-      <div class="sliders">
+      <div class="sliders" id="sliders">
         <!-- GREEN -->
         <div class="card">
           <div class="row">
             <div class="label">Available</div>
-            <div class="track" data-state="green" aria-label="Available slider">
+            <div class="track" data-state="green" data-id="green" aria-label="Available slider">
               <div class="rail"></div>
-              <button class="knob" data-pos="off" data-id="green" aria-pressed="false"></button>
+              <div class="knob" data-pos="off"></div>
             </div>
           </div>
         </div>
@@ -222,9 +215,9 @@
         <div class="card">
           <div class="row">
             <div class="label">Important Only</div>
-            <div class="track" data-state="amber" aria-label="Important only slider">
+            <div class="track" data-state="amber" data-id="amber" aria-label="Important only slider">
               <div class="rail"></div>
-              <button class="knob" data-pos="off" data-id="amber" aria-pressed="false"></button>
+              <div class="knob" data-pos="off"></div>
             </div>
           </div>
         </div>
@@ -232,9 +225,9 @@
         <div class="card">
           <div class="row">
             <div class="label">Do Not Disturb</div>
-            <div class="track" data-state="red" aria-label="Do not disturb slider">
+            <div class="track" data-state="red" data-id="red" aria-label="Do not disturb slider">
               <div class="rail"></div>
-              <button class="knob" data-pos="off" data-id="red" aria-pressed="false"></button>
+              <div class="knob" data-pos="off"></div>
             </div>
           </div>
         </div>
@@ -243,27 +236,43 @@
   </div>
 
 <script>
-  const $ = (q, root=document) => root.querySelector(q);
-  const $$ = (q, root=document) => [...root.querySelectorAll(q)];
+  /* Helpers */
+  const $  = (q, r=document) => r.querySelector(q);
+  const $$ = (q, r=document) => [...r.querySelectorAll(q)];
 
-  /* THEME TOGGLE (click/touch-safe) */
+  /* Theme: single-tap toggle buttons (click covers tap in modern webviews,
+     but we also listen to touchend with a tiny debounce to be bulletproof) */
   const themeBtns = { light: $("#btnLight"), dark: $("#btnDark") };
+
   function setTheme(name){
     document.documentElement.setAttribute("data-theme", name);
-    Object.entries(themeBtns).forEach(([k,btn]) => btn.setAttribute("aria-pressed", String(k===name)));
+    themeBtns.light.setAttribute("aria-pressed", String(name==="light"));
+    themeBtns.dark .setAttribute("aria-pressed", String(name==="dark"));
     try{ localStorage.setItem("availability.theme", name); }catch(e){}
+    // keep existing accent
     const acc = localStorage.getItem("availability.accent") || "none";
     setAccent(acc);
   }
   (function initTheme(){
     setTheme(localStorage.getItem("availability.theme") || "dark");
   })();
-  ["click","touchend"].forEach(evt=>{
-    themeBtns.light.addEventListener(evt, (e)=>{ e.preventDefault(); setTheme("light"); }, {passive:false});
-    themeBtns.dark .addEventListener(evt, (e)=>{ e.preventDefault(); setTheme("dark");  }, {passive:false});
-  });
 
-  /* Accent drives only the halo around the frame */
+  function addSimpleTap(el, handler){
+    let last = 0;
+    el.addEventListener("click", (e)=> { handler(e); });
+    el.addEventListener("touchend", (e)=>{
+      const now = Date.now();
+      if (now - last < 300) return;  // prevent double fire (touchend->click)
+      last = now;
+      e.preventDefault();
+      handler(e);
+    }, {passive:false});
+  }
+
+  addSimpleTap(themeBtns.light, ()=> setTheme("light"));
+  addSimpleTap(themeBtns.dark , ()=> setTheme("dark"));
+
+  /* Accent (halo around the frame only) */
   function setAccent(accent){ // 'green' | 'amber' | 'red' | 'none'
     if(accent && accent !== "none"){
       document.documentElement.setAttribute("data-accent", accent);
@@ -274,188 +283,56 @@
     }
   }
 
-  /* SLIDER LOGIC — exclusive ON, but allow ALL OFF */
-  const knobs = $$(".knob");
+  /* State handling — exclusive activation with ability to turn all OFF.
+     Single tap (click or touch) on a track toggles that state ON;
+     tapping the same active one again turns everything OFF. */
+  const tracks = $$(".track");
 
   function setActive(state){ // 'green'|'amber'|'red'|null
-    knobs.forEach(kn => {
-      const isTarget = state && kn.dataset.id === state;
-      kn.dataset.pos = isTarget ? "on" : "off";
-      kn.setAttribute("aria-pressed", String(isTarget));
-      const track = kn.closest(".track");
-      track.style.setProperty("--pct", isTarget ? 1 : 0);
+    tracks.forEach(tr => {
+      const knob = $(".knob", tr);
+      const on = state && tr.dataset.id === state;
+      knob.dataset.pos = on ? "on" : "off";
+      tr.style.setProperty("--pct", on ? 1 : 0);
     });
-
     setAccent(state ? state : "none");
-
     try{ localStorage.setItem("availability.state", state || "none"); }catch(e){}
-    try{
-      window.parent && window.parent.postMessage(
-        { widget:"availability-sliders", state: state || "none",
-          theme: document.documentElement.getAttribute("data-theme") },
-        "*"
-      );
-    }catch(e){}
+    // Optional: notify host if desired
+    // try{ window.parent && window.parent.postMessage({widget:"availability", state: state||"none"}, "*"); }catch(e){}
   }
 
-  // Initialize from storage (default: all OFF)
-  (function initState(){
+  function currentState(){
     const saved = localStorage.getItem("availability.state");
-    const state = (saved && saved !== "none") ? saved : null;
-    setActive(state); // null => all off
-    requestAnimationFrame(()=> {
-      knobs.forEach(kn => kn.style.left = (kn.dataset.pos==="on") ? "calc(100% - var(--knob-w) - 12px)" : "12px");
-    });
+    return (saved && saved !== "none") ? saved : null;
+  }
+
+  // Initialize from storage
+  (function initState(){
+    setActive(currentState());
   })();
 
-  /* ---- Touch + Mouse drag on knob and track ---- */
-  const TRACK_PAD = 12;
-  const DRAG_THRESHOLD = 6;
-
-  function clamp(v, min, max){ return Math.max(min, Math.min(v, max)); }
-
-  function attachTrack(track){
-    const knob = track.querySelector('.knob');
-
-    // Tap anywhere on track to toggle/snap
-    function handleTap(clientX){
-      const rect = track.getBoundingClientRect();
-      const centerX = clientX - rect.left;
-      const goOn = centerX > rect.width/2;
-      if (goOn){
-        setActive(knob.dataset.id);
-        knob.style.left = `calc(100% - var(--knob-w) - ${TRACK_PAD}px)`;
+  // Attach simple single-tap activation to each track
+  tracks.forEach(tr => {
+    addSimpleTap(tr, ()=>{
+      const id = tr.dataset.id;
+      const isActive = (currentState() === id);
+      if (isActive){
+        setActive(null); // all off
       } else {
-        setActive(null);
-        $$(".knob").forEach(k => k.style.left = `${TRACK_PAD}px`);
-      }
-    }
-
-    // Mouse
-    track.addEventListener('mousedown', (e)=>{
-      // If pressing directly on knob, the knob handler will take over
-      if (e.target === knob) return;
-      handleTap(e.clientX);
-    });
-
-    // Touch
-    track.addEventListener('touchstart', (e)=>{
-      if (e.target === knob) return; // knob handler handles drag
-      const t = e.changedTouches[0];
-      handleTap(t.clientX);
-      e.preventDefault();
-    }, {passive:false});
-  }
-
-  function attachKnob(kn){
-    const track = kn.parentElement;
-    let dragging = false;
-    let startX = 0;
-    let startLeft = 0;
-    let moved = false;
-
-    // Click/tap toggle if not dragged
-    kn.addEventListener('click', (e)=>{
-      if (moved){ e.preventDefault(); moved = false; return; }
-      const id = kn.dataset.id;
-      const on = kn.dataset.pos === 'on';
-      if (on){
-        setActive(null);
-        kn.style.left = `${TRACK_PAD}px`;
-      } else {
-        setActive(id);
-        $$(".knob").forEach(k => {
-          k.style.left = (k===kn) ? `calc(100% - var(--knob-w) - ${TRACK_PAD}px)` : `${TRACK_PAD}px`;
-        });
+        setActive(id);   // make this the active one
       }
     });
+  });
 
-    // Mouse drag
-    kn.addEventListener('mousedown', (e)=>{
-      dragging = true; moved = false;
-      startX = e.clientX;
-      startLeft = parseFloat(getComputedStyle(kn).left);
-      document.addEventListener('mousemove', onMouseMove, {passive:false});
-      document.addEventListener('mouseup', onMouseUp, {passive:false});
-      e.preventDefault();
-    });
-
-    function onMouseMove(e){
-      if (!dragging) return;
-      const dx = e.clientX - startX;
-      if (Math.abs(dx) > DRAG_THRESHOLD) moved = true;
-      const min = TRACK_PAD;
-      const max = track.clientWidth - parseFloat(getComputedStyle(kn).width) - TRACK_PAD;
-      kn.style.left = clamp(startLeft + dx, min, max) + 'px';
-      e.preventDefault();
-    }
-    function onMouseUp(e){
-      if (!dragging) return;
-      dragging = false;
-      settle(e.clientX);
-      document.removeEventListener('mousemove', onMouseMove);
-      document.removeEventListener('mouseup', onMouseUp);
-      e.preventDefault();
-    }
-
-    // Touch drag
-    kn.addEventListener('touchstart', (e)=>{
-      const t = e.changedTouches[0];
-      dragging = true; moved = false;
-      startX = t.clientX;
-      startLeft = parseFloat(getComputedStyle(kn).left);
-      e.preventDefault();
-    }, {passive:false});
-
-    kn.addEventListener('touchmove', (e)=>{
-      if (!dragging) return;
-      const t = e.changedTouches[0];
-      const dx = t.clientX - startX;
-      if (Math.abs(dx) > DRAG_THRESHOLD) moved = true;
-      const min = TRACK_PAD;
-      const max = track.clientWidth - parseFloat(getComputedStyle(kn).width) - TRACK_PAD;
-      kn.style.left = clamp(startLeft + dx, min, max) + 'px';
-      e.preventDefault();
-    }, {passive:false});
-
-    kn.addEventListener('touchend', (e)=>{
-      if (!dragging) return;
-      dragging = false;
-      const t = e.changedTouches[0];
-      settle(t.clientX);
-      e.preventDefault();
-    }, {passive:false});
-
-    kn.addEventListener('touchcancel', ()=>{
-      dragging = false;
-    });
-
-    function settle(clientX){
-      const rect = track.getBoundingClientRect();
-      const knobW = parseFloat(getComputedStyle(kn).width);
-      const center = (parseFloat(getComputedStyle(kn).left) + knobW/2);
-      const goOn = center > (track.clientWidth/2);
-      if (goOn){
-        setActive(kn.dataset.id);
-        kn.style.left = `calc(100% - var(--knob-w) - ${TRACK_PAD}px)`;
-      } else {
-        setActive(null);
-        $$(".knob").forEach(k => k.style.left = `${TRACK_PAD}px`);
-      }
-      // suppress click that follows a drag
-      setTimeout(()=>{ moved = false; }, 0);
-    }
-  }
-
-  $$('.track').forEach(attachTrack);
-  $$('.knob').forEach(attachKnob);
-
-  // Keep knob positions on resize
+  // Maintain knob positions on resize (no drag, but keep consistency)
   new ResizeObserver(() => {
-    $$('.knob').forEach(kn=>{
-      kn.style.left = (kn.dataset.pos==="on") ? `calc(100% - var(--knob-w) - 12px)` : `12px`;
+    tracks.forEach(tr=>{
+      const knob = $(".knob", tr);
+      // Position set purely by [data-pos] via CSS; no JS needed here.
+      // This observer just ensures layout updates have occurred.
+      void knob.offsetWidth; // reflow nudge (no-op, safe)
     });
-  }).observe($('.frame'));
+  }).observe($(".frame"));
 </script>
 </body>
 </html>
