@@ -7,58 +7,50 @@
 <link href="https://fonts.googleapis.com/css2?family=Saira:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
-    --green:#00ff4c;
-    --amber:#ffb020;
-    --red:#ff3b30;
+    --green:#00ff4c; --amber:#ffb020; --red:#ff3b30;
 
-    --radius: 18px;
-    --gap: clamp(12px, 2vw, 20px);
-    --pad: clamp(12px, 2vw, 18px);
-    --track-h: 72px;
-    --knob-h: 56px;
-    --knob-w: 96px;
-    --knob-radius: 14px;
+    --radius:18px;
+    --gap:clamp(12px,2vw,20px);
+    --pad:clamp(12px,2vw,18px);
+    --track-h:72px;
+    --knob-h:56px; --knob-w:96px; --knob-radius:14px;
 
-    --frame-glow: transparent;
+    --frame-glow:transparent;
   }
 
-  html[data-theme="dark"]{
-    --bg:#000;  --panel:#0f1115; --panel-2:#141820; --ink:#e8eef5; --muted:#9fb2c9;
-  }
-  html[data-theme="light"]{
-    --bg:#f8fafc; --panel:#e9eef6; --panel-2:#dae3ef; --ink:#1d2330; --muted:#4c5a6b;
-  }
+  /* Themes */
+  html[data-theme="dark"]{  --bg:#000;    --panel:#0f1115; --panel-2:#141820; --ink:#e8eef5; --muted:#9fb2c9; }
+  html[data-theme="light"]{ --bg:#f8fafc; --panel:#e9eef6; --panel-2:#dae3ef; --ink:#1d2330; --muted:#4c5a6b; }
 
+  /* Frame halo (set via data-accent; no storage) */
   html[data-accent="green"]{ --frame-glow: color-mix(in oklab, var(--green) 85%, transparent); }
   html[data-accent="amber"]{ --frame-glow: color-mix(in oklab, var(--amber) 85%, transparent); }
   html[data-accent="red"]  { --frame-glow: color-mix(in oklab, var(--red)   85%, transparent); }
 
-  *{box-sizing:border-box}
-  html,body{height:100%}
+  *{ box-sizing:border-box }
+  html,body{ height:100% }
   body{
     margin:0; background:var(--bg); color:var(--ink);
     font-family:"Saira", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
     display:grid; place-items:center;
 
+    /* Touch-first for iframes */
     -webkit-user-select:none; user-select:none;
     -webkit-touch-callout:none;
-    /* Allow quick taps, no gestures */
-    touch-action: manipulation;
+    touch-action: manipulation;              /* single taps, no gestures */
     pointer-events:auto;
-    /* Force arrow cursor across the widget */
-    cursor: default !important;
+    cursor: default !important;              /* force arrow, not hand */
   }
 
   .frame{
     position:relative;
-    width:min(920px, 94vw);
-    border-radius: calc(var(--radius) + 6px);
+    width:min(920px,94vw);
+    border-radius:calc(var(--radius) + 6px);
     overflow:hidden;
     background:linear-gradient(180deg, var(--panel), var(--panel-2));
     border:1px solid rgba(255,255,255,.06);
     box-shadow: 0 12px 36px rgba(0,0,0,.45);
     transition: box-shadow .24s ease;
-    pointer-events:auto;
   }
   html[data-accent] .frame{
     box-shadow:
@@ -68,110 +60,98 @@
       0 0 280px 120px var(--frame-glow);
   }
 
-  .content{ padding: clamp(14px, 2.2vw, 22px); }
+  .content{ padding:clamp(14px,2.2vw,22px); }
 
   .header{
     display:flex; align-items:center; justify-content:space-between; gap:12px;
-    margin-bottom: var(--gap);
+    margin-bottom:var(--gap);
   }
-  .title{ font-weight:700; letter-spacing:.2px; font-size: clamp(16px, 2.4vw, 22px); }
-  .title .by { font-weight:600; opacity:.9; font-size:.92em; }
-  .title .oh { font-weight:800; letter-spacing:.5px; }
+  .title{ font-weight:700; letter-spacing:.2px; font-size:clamp(16px,2.4vw,22px); }
+  .title .by{ font-weight:600; opacity:.9; font-size:.92em; }
+  .title .oh{ font-weight:800; letter-spacing:.5px; }
 
   .modes{
-    display:flex; gap:8px;
-    background: rgba(255,255,255,.05);
+    display:flex; gap:8px; padding:6px;
+    background:rgba(255,255,255,.05);
     border:1px solid rgba(255,255,255,.10);
-    border-radius:999px; padding:6px;
-    pointer-events:auto;
+    border-radius:999px;
   }
-  html[data-theme="light"] .modes{
-    background: rgba(0,0,0,.05);
-    border-color: rgba(0,0,0,.08);
-  }
+  html[data-theme="light"] .modes{ background:rgba(0,0,0,.05); border-color:rgba(0,0,0,.08); }
   .btn{
     appearance:none; border:0; background:transparent; color:var(--ink);
     padding:8px 12px; border-radius:999px; font-weight:600;
-    /* arrow cursor, not hand */
+    opacity:.8; transition:opacity .15s, background .15s;
+    -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation; pointer-events:auto;
     cursor: default !important;
-    opacity:.75; transition:opacity .2s, background .2s;
-    -webkit-tap-highlight-color: transparent;
-    touch-action: manipulation;
-    pointer-events:auto;
   }
-  .btn[aria-pressed="true"]{ background:rgba(255,255,255,.10); opacity:1; }
-  html[data-theme="light"] .btn[aria-pressed="true"]{ background:rgba(0,0,0,.08); }
+  .btn.active{ opacity:1; background:rgba(255,255,255,.10); }
+  html[data-theme="light"] .btn.active{ background:rgba(0,0,0,.08); }
 
-  .sliders{ display:grid; grid-template-columns:1fr; gap: var(--gap); }
+  .sliders{ display:grid; grid-template-columns:1fr; gap:var(--gap); }
+
   .card{
     background:rgba(255,255,255,.09);
     border:1px solid rgba(255,255,255,.12);
-    padding: var(--pad);
-    border-radius: var(--radius);
+    padding:var(--pad);
+    border-radius:var(--radius);
     backdrop-filter: blur(2px);
   }
-  html[data-theme="light"] .card{
-    background:rgba(0,0,0,.05);
-    border-color: rgba(0,0,0,.10);
-  }
+  html[data-theme="light"] .card{ background:rgba(0,0,0,.05); border-color:rgba(0,0,0,.10); }
 
-  .row{
-    display:grid; grid-template-columns: 160px 1fr;
-    align-items:center; gap:14px;
-  }
-  .label{ font-weight:700; letter-spacing:.3px; color:var(--ink); }
+  .row{ display:grid; grid-template-columns:160px 1fr; align-items:center; gap:14px; }
+  .label-text{ font-weight:700; letter-spacing:.3px; color:var(--ink); }
 
-  .track{
-    position:relative; height: var(--track-h);
+  /* ====== Native radio + label track ====== */
+  .opt{ position:relative; }
+  .opt input{
+    position:absolute; inset:0; width:100%; height:100%;
+    opacity:0; pointer-events:none; /* visually hidden but keeps native behavior */
+  }
+  .opt label{
+    display:block; position:relative;
+    height:var(--track-h);
     background:linear-gradient(180deg, rgba(255,255,255,.14), rgba(0,0,0,.18));
-    border-radius: calc(var(--knob-radius) + 10px);
+    border-radius:calc(var(--knob-radius) + 10px);
     border:1px solid rgba(255,255,255,.18);
     overflow:hidden;
-
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
-    /* arrow, not hand */
-    cursor: default !important;
-    pointer-events:auto;
+    -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;
+    cursor: default !important;   /* arrow, not hand */
   }
-  html[data-theme="light"] .track{
+  html[data-theme="light"] .opt label{
     background:linear-gradient(180deg, rgba(255,255,255,.7), rgba(0,0,0,.08));
-    border-color: rgba(0,0,0,.15);
+    border-color:rgba(0,0,0,.15);
   }
 
-  .rail{
-    position:absolute; inset: 22px 12px; border-radius: 12px;
-    background: rgba(255,255,255,.08);
-    pointer-events:none;
-  }
-  html[data-theme="light"] .rail{ background: rgba(0,0,0,.08); }
+  .rail{ position:absolute; inset:22px 12px; border-radius:12px; background:rgba(255,255,255,.08); pointer-events:none; }
+  html[data-theme="light"] .rail{ background:rgba(0,0,0,.08); }
 
   .rail::before{
     content:""; position:absolute; inset:0; border-radius:inherit;
-    transform-origin:left center; transform: scaleX(var(--pct, 0));
-    transition: transform .12s ease;
+    transform-origin:left center; transform:scaleX(0); transition:transform .12s ease;
   }
-  .track[data-state="green"] .rail::before{ background: var(--green); }
-  .track[data-state="amber"] .rail::before{ background: var(--amber); }
-  .track[data-state="red"]   .rail::before{ background: var(--red); }
+  /* Fill color per option when checked */
+  #avail-green:checked + label .rail::before{ background:var(--green); transform:scaleX(1); }
+  #avail-amber:checked + label .rail::before{ background:var(--amber); transform:scaleX(1); }
+  #avail-red:checked   + label .rail::before{ background:var(--red);   transform:scaleX(1); }
 
   .knob{
     position:absolute; top:50%; translate:0 -50%;
-    height: var(--knob-h); width: var(--knob-w); border-radius: var(--knob-radius);
+    height:var(--knob-h); width:var(--knob-w); border-radius:var(--knob-radius);
     background:linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.04));
     box-shadow: inset 0 1px 0 rgba(255,255,255,.22), inset 0 -6px 20px rgba(0,0,0,.34), 0 4px 18px rgba(0,0,0,.25);
     border:1px solid rgba(255,255,255,.20);
-    pointer-events:none;
-    transition: left .12s ease;
+    left:12px; transition:left .12s ease; pointer-events:none;
   }
   html[data-theme="light"] .knob{
     box-shadow: inset 0 1px 0 rgba(255,255,255,.7), inset 0 -6px 20px rgba(0,0,0,.12), 0 4px 18px rgba(0,0,0,.12);
-    border-color: rgba(0,0,0,.12);
+    border-color:rgba(0,0,0,.12);
   }
-
-  .track{ --left-off: 12px; --left-on: calc(100% - var(--knob-w) - 12px); }
-  .knob[data-pos="off"]{ left: var(--left-off); }
-  .knob[data-pos="on"]{  left: var(--left-on); }
+  .opt{ --left-on: calc(100% - var(--knob-w) - 12px); }
+  #avail-green:checked + label .knob,
+  #avail-amber:checked + label .knob,
+  #avail-red:checked   + label .knob{ left: var(--left-on); }
 </style>
 </head>
 <body>
@@ -182,125 +162,119 @@
           Availability <span class="by">by <span class="oh">OPULENT HARDWARE</span></span>
         </div>
         <div class="modes" role="group" aria-label="Theme">
-          <button class="btn" id="btnLight" aria-pressed="false" title="Light mode">Light</button>
-          <button class="btn" id="btnDark"  aria-pressed="true"  title="Dark mode">Dark</button>
+          <button class="btn" id="btnLight">Light</button>
+          <button class="btn btnDark active" id="btnDark">Dark</button>
         </div>
       </div>
 
       <div class="sliders">
+        <!-- GREEN -->
         <div class="card">
           <div class="row">
-            <div class="label">Available</div>
-            <div class="track" data-id="green" data-state="green" aria-label="Available">
-              <div class="rail"></div>
-              <div class="knob" data-pos="off"></div>
+            <div class="label-text">Available</div>
+            <div class="opt">
+              <input type="radio" name="avail" id="avail-green" value="green" />
+              <label for="avail-green" aria-label="Available">
+                <div class="rail"></div><div class="knob"></div>
+              </label>
             </div>
           </div>
         </div>
 
+        <!-- AMBER -->
         <div class="card">
           <div class="row">
-            <div class="label">Important Only</div>
-            <div class="track" data-id="amber" data-state="amber" aria-label="Important Only">
-              <div class="rail"></div>
-              <div class="knob" data-pos="off"></div>
+            <div class="label-text">Important Only</div>
+            <div class="opt">
+              <input type="radio" name="avail" id="avail-amber" value="amber" />
+              <label for="avail-amber" aria-label="Important Only">
+                <div class="rail"></div><div class="knob"></div>
+              </label>
             </div>
           </div>
         </div>
 
+        <!-- RED -->
         <div class="card">
           <div class="row">
-            <div class="label">Do Not Disturb</div>
-            <div class="track" data-id="red" data-state="red" aria-label="Do Not Disturb">
-              <div class="rail"></div>
-              <div class="knob" data-pos="off"></div>
+            <div class="label-text">Do Not Disturb</div>
+            <div class="opt">
+              <input type="radio" name="avail" id="avail-red" value="red" />
+              <label for="avail-red" aria-label="Do Not Disturb">
+                <div class="rail"></div><div class="knob"></div>
+              </label>
             </div>
           </div>
         </div>
+
+        <!-- Hidden "none" radio so we can turn everything off with a tap -->
+        <input type="radio" name="avail" id="avail-none" value="none" style="position:absolute;opacity:0;pointer-events:none;" />
       </div>
     </div>
   </div>
 
 <script>
-  // Helpers
-  const $  = (q, r=document) => r.querySelector(q);
-  const $$ = (q, r=document) => [...r.querySelectorAll(q)];
+  // No storage. Minimal JS:
+  // - Toggle theme (optional)
+  // - Allow "all off" by tapping the active label
+  // - Update frame halo via data-accent for visuals
 
-  // State management
-  const tracks = $$(".track");
-  function setAccent(accent){
-    if(accent){
-      document.documentElement.setAttribute("data-accent", accent);
-      try{ localStorage.setItem("availability.accent", accent); }catch(e){}
-    }else{
-      document.documentElement.removeAttribute("data-accent");
-      try{ localStorage.setItem("availability.accent", "none"); }catch(e){}
-    }
+  const byId = (id)=>document.getElementById(id);
+  const btnLight = byId('btnLight');
+  const btnDark  = byId('btnDark');
+
+  btnLight.addEventListener('pointerdown', (e)=>{ e.preventDefault(); document.documentElement.setAttribute('data-theme','light'); btnLight.classList.add('active'); btnDark.classList.remove('active'); }, {capture:true});
+  btnDark .addEventListener('pointerdown', (e)=>{ e.preventDefault(); document.documentElement.setAttribute('data-theme','dark');  btnDark.classList.add('active');  btnLight.classList.remove('active'); }, {capture:true});
+
+  const radios = ['green','amber','red'].map(v=>byId('avail-'+v));
+  const none   = byId('avail-none');
+
+  // Update halo on change
+  function updateAccent(){
+    const r = radios.find(r=>r.checked);
+    if(r){ document.documentElement.setAttribute('data-accent', r.value); }
+    else { document.documentElement.removeAttribute('data-accent'); }
   }
-  function setActive(state){ // 'green'|'amber'|'red'|null
-    tracks.forEach(tr => {
-      const knob = tr.querySelector(".knob");
-      const on = state && tr.dataset.id === state;
-      tr.style.setProperty("--pct", on ? 1 : 0);
-      knob.dataset.pos = on ? "on" : "off";
-    });
-    setAccent(state || null);
-    try{ localStorage.setItem("availability.state", state || "none"); }catch(e){}
-    // Optional bridge:
-    // try{ window.parent.postMessage({widget:"availability", state: state || "none"}, "*"); }catch(e){}
-  }
-  function getSavedState(){
-    const s = localStorage.getItem("availability.state");
-    return (s && s !== "none") ? s : null;
-  }
-  function setTheme(name){
-    document.documentElement.setAttribute("data-theme", name);
-    $("#btnLight").setAttribute("aria-pressed", String(name==="light"));
-    $("#btnDark").setAttribute("aria-pressed", String(name==="dark"));
-    try{ localStorage.setItem("availability.theme", name); }catch(e){}
-    const acc = localStorage.getItem("availability.accent") || "none";
-    setAccent(acc !== "none" ? acc : null);
-  }
+  radios.forEach(r => r.addEventListener('change', updateAccent));
 
-  // Init
-  setTheme(localStorage.getItem("availability.theme") || "dark");
-  setActive(getSavedState());
-
-  // === Single, global POINTERDOWN handler (touch-first; iframe-safe) ===
-  // We deliberately DO NOT use click/mouseup/pointerup; some webviews swallow them.
-  document.addEventListener("pointerdown", (e) => {
-    // Stop text selection/gesture side-effects on touch
-    e.preventDefault?.();
-
-    const t = e.target.closest?.(".track, .btn");
-    if(!t) return;
-
-    if(t.classList.contains("btn")){
-      if(t.id === "btnLight") setTheme("light");
-      if(t.id === "btnDark")  setTheme("dark");
+  // Allow tapping the active track to turn "off"
+  document.addEventListener('pointerdown', (e)=>{
+    const lab = e.target.closest('label');
+    if(!lab) return;
+    e.preventDefault(); // stay tap-first; avoid ghost clicks
+    const forId = lab.getAttribute('for');
+    const input = forId && byId(forId);
+    if(!input) return;
+    if(input.checked){
+      // was active -> turn all off
+      none.checked = true;
+      updateAccent();
       return;
     }
-    if(t.classList.contains("track")){
-      const id = t.dataset.id;
-      const current = getSavedState();
-      setActive(current === id ? null : id);
-      return;
-    }
-  }, {capture:true}); // capture to beat host handlers
+    // activate this one
+    input.checked = true;
+    input.dispatchEvent(new Event('change', {bubbles:true}));
+  }, {capture:true});
 
-  // Keep interactable (defensive against host CSS)
-  (function ensureInteractable(){
+  // Ensure arrow cursor + touch behavior even if host injects CSS
+  (function harden(){
     document.documentElement.style.pointerEvents = 'auto';
     document.body.style.pointerEvents = 'auto';
-    [...document.querySelectorAll('.track,.btn')].forEach(el => {
-      el.style.pointerEvents = 'auto';
-      el.style.touchAction = 'manipulation';
+    document.querySelectorAll('label,.btn').forEach(el=>{
       el.style.cursor = 'default';
+      el.style.touchAction = 'manipulation';
+      el.style.webkitTapHighlightColor = 'transparent';
     });
   })();
 
-  // Prevent iOS gesture from stealing taps
-  window.addEventListener?.("gesturestart", e => { e.preventDefault?.(); }, {passive:false});
+  // Optional: post state to host (comment in if you want)
+  // function post() {
+  //   const r = radios.find(r=>r.checked);
+  //   const state = r ? r.value : 'none';
+  //   try { window.parent && window.parent.postMessage({widget:'availability', state}, '*'); } catch(e){}
+  // }
+  // radios.forEach(r => r.addEventListener('change', post));
+  // none.addEventListener('change', post);
 </script>
 </body>
 </html>
