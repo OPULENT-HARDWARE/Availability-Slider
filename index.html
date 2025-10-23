@@ -141,6 +141,7 @@
   .rail{
     position:absolute; inset: 22px 12px; border-radius: 12px;
     background: rgba(255,255,255,.08);
+    pointer-events:none;
   }
   html[data-theme="light"] .rail{ background: rgba(0,0,0,.08); }
 
@@ -173,6 +174,9 @@
   .track{ --left-off: 12px; --left-on: calc(100% - var(--knob-w) - 12px); }
   .knob[data-pos="off"]{ left: var(--left-off); }
   .knob[data-pos="on"]{  left: var(--left-on); }
+
+  /* Focus (for keyboard use in desktop) */
+  .track:focus-visible{ outline:2px solid rgba(255,255,255,.3); outline-offset:2px; }
 </style>
 </head>
 <body>
@@ -193,7 +197,7 @@
         <div class="card">
           <div class="row">
             <div class="label">Available</div>
-            <div class="track" data-id="green" data-state="green" aria-label="Available">
+            <div class="track" data-id="green" data-state="green" aria-label="Available" role="switch" aria-checked="false" tabindex="0">
               <div class="rail"></div>
               <div class="knob" data-pos="off"></div>
             </div>
@@ -203,7 +207,7 @@
         <div class="card">
           <div class="row">
             <div class="label">Important Only</div>
-            <div class="track" data-id="amber" data-state="amber" aria-label="Important Only">
+            <div class="track" data-id="amber" data-state="amber" aria-label="Important Only" role="switch" aria-checked="false" tabindex="0">
               <div class="rail"></div>
               <div class="knob" data-pos="off"></div>
             </div>
@@ -213,7 +217,7 @@
         <div class="card">
           <div class="row">
             <div class="label">Do Not Disturb</div>
-            <div class="track" data-id="red" data-state="red" aria-label="Do Not Disturb">
+            <div class="track" data-id="red" data-state="red" aria-label="Do Not Disturb" role="switch" aria-checked="false" tabindex="0">
               <div class="rail"></div>
               <div class="knob" data-pos="off"></div>
             </div>
@@ -224,22 +228,21 @@
   </div>
 
 <script>
-  /* ========= Touch-first tap helper (robust in iframes) ========= */
+  /* ========= Tap helper (pointer-first; robust in iframes/webviews) ========= */
   function addTap(el, handler){
-    // De-dupe across pointerup/touchend/mouseup/click
     let last = 0;
-    const wrap = (ev) => {
+    const call = (ev) => {
       const now = performance.now ? performance.now() : Date.now();
-      if (now - last < 220) return; // ignore duplicates within ~1/5s
+      if (now - last < 150) return;  // dedupe burst
       last = now;
       handler(ev);
     };
-    // Pointer is preferred in many embedded Chromium views
-    el.addEventListener("pointerup", wrap, {capture:true});
-    // Fallbacks for environments that skip pointer events
-    el.addEventListener("touchend", wrap, {capture:true, passive:true});
-    el.addEventListener("mouseup", wrap, {capture:true});
-    el.addEventListener("click", wrap, {capture:true});
+    // Pointer is best in CEF/Electron/iCUE
+    el.addEventListener("pointerdown", call);
+    // Fallbacks
+    el.addEventListener("touchstart", call, {passive:true});
+    el.addEventListener("mousedown", call);
+    el.addEventListener("click", call); // final fallback
   }
 
   const $  = (q, r=document) => r.querySelector(q);
@@ -254,7 +257,6 @@
     btnLight.setAttribute("aria-pressed", String(name==="light"));
     btnDark .setAttribute("aria-pressed", String(name==="dark"));
     try{ localStorage.setItem("availability.theme", name); }catch(e){}
-    // keep halo color as-is
     const acc = localStorage.getItem("availability.accent") || "none";
     setAccent(acc);
   }
@@ -283,6 +285,7 @@
       const on = state && tr.dataset.id === state;
       tr.style.setProperty("--pct", on ? 1 : 0);
       knob.dataset.pos = on ? "on" : "off";
+      tr.setAttribute("aria-checked", String(!!on));
     });
     setAccent(state ? state : "none");
     try{ localStorage.setItem("availability.state", state || "none"); }catch(e){}
@@ -298,21 +301,31 @@
   // Initialize
   setActive(getSavedState());
 
-  // Single-tap anywhere on a track toggles its state
+  // Single tap/click anywhere on a track toggles its state
   tracks.forEach(tr => {
-    addTap(tr, ()=>{
+    addTap(tr, ()=> {
       const id = tr.dataset.id;
       const isActive = (getSavedState() === id);
       setActive(isActive ? null : id);
     });
+    // Keyboard support
+    tr.addEventListener("keydown", (e)=>{
+      if(e.key === "Enter" || e.key === " ") { e.preventDefault(); tr.click(); }
+    });
   });
 
-  // Ensure everything remains interactable (defensive against host CSS)
+  // Defensive: keep interactable even if host injects CSS
   (function ensureInteractable(){
     document.documentElement.style.pointerEvents = 'auto';
     document.body.style.pointerEvents = 'auto';
-    [...document.querySelectorAll('.track,.btn')].forEach(el => el.style.pointerEvents = 'auto');
+    [...document.querySelectorAll('.track,.btn')].forEach(el => {
+      el.style.pointerEvents = 'auto';
+      el.style.touchAction = 'manipulation';
+    });
   })();
+
+  // iOS “pinch to zoom” gesture can swallow taps; prevent gesturestart if present
+  window.addEventListener?.("gesturestart", e => { e.preventDefault?.(); }, {passive:false});
 </script>
 </body>
 </html>
