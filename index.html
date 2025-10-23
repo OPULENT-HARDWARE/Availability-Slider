@@ -53,6 +53,7 @@
     font-family:"Saira", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
     display:grid;
     place-items:center;
+    -webkit-user-select:none; user-select:none;
   }
 
   /* Widget frame – only this gets the colored halo */
@@ -93,6 +94,7 @@
     background: rgba(255,255,255,.05);
     border:1px solid rgba(255,255,255,.10);
     border-radius:999px; padding:6px;
+    pointer-events:auto;
   }
   html[data-theme="light"] .modes{
     background: rgba(0,0,0,.05);
@@ -103,6 +105,8 @@
     padding:8px 12px; border-radius:999px; font-weight:600; cursor:pointer;
     opacity:.75; transition:opacity .2s, background .2s;
     -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    pointer-events:auto;
   }
   .modes button[aria-pressed="true"]{ background:rgba(255,255,255,.10); opacity:1; }
   html[data-theme="light"] .modes button[aria-pressed="true"]{ background:rgba(0,0,0,.08); }
@@ -120,7 +124,7 @@
     border-color: rgba(0,0,0,.10);
   }
 
-  /* two columns now: label + track (right-side pills removed) */
+  /* two columns: label + track (right-side pills removed) */
   .row{
     display:grid; grid-template-columns: 160px 1fr;
     align-items:center; gap:14px;
@@ -134,11 +138,12 @@
     border-radius: calc(var(--knob-radius) + 10px);
     border:1px solid rgba(255,255,255,.18); overflow:hidden;
 
-    /* IMPORTANT for touch dragging */
-    touch-action: none;               /* prevent browser pan from stealing drag */
-    -webkit-user-select: none;
-            user-select: none;
+    /* Touch essentials */
+    touch-action: none;
+    -webkit-user-select: none; user-select: none;
     -webkit-tap-highlight-color: transparent;
+    cursor:pointer;
+    pointer-events:auto;
   }
   html[data-theme="light"] .track{
     background:linear-gradient(180deg, rgba(255,255,255,.7), rgba(0,0,0,.08));
@@ -152,7 +157,7 @@
   .rail::before{
     content:""; position:absolute; inset:0; border-radius:inherit;
     transform-origin:left center; transform: scaleX(var(--pct, 0));
-    transition: transform .25s ease;
+    transition: transform .2s ease;
   }
   /* TRACK COLOR ON for active slider only */
   .track[data-state="green"] .rail::before{ background: var(--green); }
@@ -164,4 +169,293 @@
     position:absolute; top:50%; translate:0 -50%;
     height: var(--knob-h); width: var(--knob-w); border-radius: var(--knob-radius);
     background:linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.04));
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.22), inse
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.22), inset 0 -6px 20px rgba(0,0,0,.34), 0 4px 18px rgba(0,0,0,.25);
+    border:1px solid rgba(255,255,255,.20);
+    outline: 2px solid transparent;
+    cursor:grab;
+
+    /* Touch essentials */
+    touch-action: none;
+    -webkit-user-select: none; user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    pointer-events:auto;
+  }
+
+  .knob:active{ cursor:grabbing; }
+
+  html[data-theme="light"] .knob{
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.7), inset 0 -6px 20px rgba(0,0,0,.12), 0 4px 18px rgba(0,0,0,.12);
+    border-color: rgba(0,0,0,.12);
+  }
+
+  /* OFF (left) / ON (right) positions */
+  .track{ --left-off: 12px; --left-on: calc(100% - var(--knob-w) - 12px); }
+  .knob[data-pos="off"]{ left: var(--left-off); }
+  .knob[data-pos="on"]{  left: var(--left-on); }
+</style>
+</head>
+<body>
+  <div class="frame" role="application" aria-label="Availability status sliders">
+    <div class="content">
+      <div class="header">
+        <div class="title">
+          Availability <span>by <span class="oh">OPULENT HARDWARE</span></span>
+        </div>
+        <div class="modes" role="group" aria-label="Theme">
+          <button id="btnLight" aria-pressed="false" title="Light mode">Light</button>
+          <button id="btnDark"  aria-pressed="true"  title="Dark mode (pure black)">Dark</button>
+        </div>
+      </div>
+
+      <div class="sliders">
+        <!-- GREEN -->
+        <div class="card">
+          <div class="row">
+            <div class="label">Available</div>
+            <div class="track" data-state="green" aria-label="Available slider">
+              <div class="rail"></div>
+              <button class="knob" data-pos="off" data-id="green" aria-pressed="false"></button>
+            </div>
+          </div>
+        </div>
+        <!-- AMBER -->
+        <div class="card">
+          <div class="row">
+            <div class="label">Important Only</div>
+            <div class="track" data-state="amber" aria-label="Important only slider">
+              <div class="rail"></div>
+              <button class="knob" data-pos="off" data-id="amber" aria-pressed="false"></button>
+            </div>
+          </div>
+        </div>
+        <!-- RED -->
+        <div class="card">
+          <div class="row">
+            <div class="label">Do Not Disturb</div>
+            <div class="track" data-state="red" aria-label="Do not disturb slider">
+              <div class="rail"></div>
+              <button class="knob" data-pos="off" data-id="red" aria-pressed="false"></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const $ = (q, root=document) => root.querySelector(q);
+  const $$ = (q, root=document) => [...root.querySelectorAll(q)];
+
+  /* THEME TOGGLE (click/touch-safe) */
+  const themeBtns = { light: $("#btnLight"), dark: $("#btnDark") };
+  function setTheme(name){
+    document.documentElement.setAttribute("data-theme", name);
+    Object.entries(themeBtns).forEach(([k,btn]) => btn.setAttribute("aria-pressed", String(k===name)));
+    try{ localStorage.setItem("availability.theme", name); }catch(e){}
+    const acc = localStorage.getItem("availability.accent") || "none";
+    setAccent(acc);
+  }
+  (function initTheme(){
+    setTheme(localStorage.getItem("availability.theme") || "dark");
+  })();
+  ["click","touchend"].forEach(evt=>{
+    themeBtns.light.addEventListener(evt, (e)=>{ e.preventDefault(); setTheme("light"); }, {passive:false});
+    themeBtns.dark .addEventListener(evt, (e)=>{ e.preventDefault(); setTheme("dark");  }, {passive:false});
+  });
+
+  /* Accent drives only the halo around the frame */
+  function setAccent(accent){ // 'green' | 'amber' | 'red' | 'none'
+    if(accent && accent !== "none"){
+      document.documentElement.setAttribute("data-accent", accent);
+      try{ localStorage.setItem("availability.accent", accent); }catch(e){}
+    } else {
+      document.documentElement.removeAttribute("data-accent");
+      try{ localStorage.setItem("availability.accent", "none"); }catch(e){}
+    }
+  }
+
+  /* SLIDER LOGIC — exclusive ON, but allow ALL OFF */
+  const knobs = $$(".knob");
+
+  function setActive(state){ // 'green'|'amber'|'red'|null
+    knobs.forEach(kn => {
+      const isTarget = state && kn.dataset.id === state;
+      kn.dataset.pos = isTarget ? "on" : "off";
+      kn.setAttribute("aria-pressed", String(isTarget));
+      const track = kn.closest(".track");
+      track.style.setProperty("--pct", isTarget ? 1 : 0);
+    });
+
+    setAccent(state ? state : "none");
+
+    try{ localStorage.setItem("availability.state", state || "none"); }catch(e){}
+    try{
+      window.parent && window.parent.postMessage(
+        { widget:"availability-sliders", state: state || "none",
+          theme: document.documentElement.getAttribute("data-theme") },
+        "*"
+      );
+    }catch(e){}
+  }
+
+  // Initialize from storage (default: all OFF)
+  (function initState(){
+    const saved = localStorage.getItem("availability.state");
+    const state = (saved && saved !== "none") ? saved : null;
+    setActive(state); // null => all off
+    requestAnimationFrame(()=> {
+      knobs.forEach(kn => kn.style.left = (kn.dataset.pos==="on") ? "calc(100% - var(--knob-w) - 12px)" : "12px");
+    });
+  })();
+
+  /* ---- Touch + Mouse drag on knob and track ---- */
+  const TRACK_PAD = 12;
+  const DRAG_THRESHOLD = 6;
+
+  function clamp(v, min, max){ return Math.max(min, Math.min(v, max)); }
+
+  function attachTrack(track){
+    const knob = track.querySelector('.knob');
+
+    // Tap anywhere on track to toggle/snap
+    function handleTap(clientX){
+      const rect = track.getBoundingClientRect();
+      const centerX = clientX - rect.left;
+      const goOn = centerX > rect.width/2;
+      if (goOn){
+        setActive(knob.dataset.id);
+        knob.style.left = `calc(100% - var(--knob-w) - ${TRACK_PAD}px)`;
+      } else {
+        setActive(null);
+        $$(".knob").forEach(k => k.style.left = `${TRACK_PAD}px`);
+      }
+    }
+
+    // Mouse
+    track.addEventListener('mousedown', (e)=>{
+      // If pressing directly on knob, the knob handler will take over
+      if (e.target === knob) return;
+      handleTap(e.clientX);
+    });
+
+    // Touch
+    track.addEventListener('touchstart', (e)=>{
+      if (e.target === knob) return; // knob handler handles drag
+      const t = e.changedTouches[0];
+      handleTap(t.clientX);
+      e.preventDefault();
+    }, {passive:false});
+  }
+
+  function attachKnob(kn){
+    const track = kn.parentElement;
+    let dragging = false;
+    let startX = 0;
+    let startLeft = 0;
+    let moved = false;
+
+    // Click/tap toggle if not dragged
+    kn.addEventListener('click', (e)=>{
+      if (moved){ e.preventDefault(); moved = false; return; }
+      const id = kn.dataset.id;
+      const on = kn.dataset.pos === 'on';
+      if (on){
+        setActive(null);
+        kn.style.left = `${TRACK_PAD}px`;
+      } else {
+        setActive(id);
+        $$(".knob").forEach(k => {
+          k.style.left = (k===kn) ? `calc(100% - var(--knob-w) - ${TRACK_PAD}px)` : `${TRACK_PAD}px`;
+        });
+      }
+    });
+
+    // Mouse drag
+    kn.addEventListener('mousedown', (e)=>{
+      dragging = true; moved = false;
+      startX = e.clientX;
+      startLeft = parseFloat(getComputedStyle(kn).left);
+      document.addEventListener('mousemove', onMouseMove, {passive:false});
+      document.addEventListener('mouseup', onMouseUp, {passive:false});
+      e.preventDefault();
+    });
+
+    function onMouseMove(e){
+      if (!dragging) return;
+      const dx = e.clientX - startX;
+      if (Math.abs(dx) > DRAG_THRESHOLD) moved = true;
+      const min = TRACK_PAD;
+      const max = track.clientWidth - parseFloat(getComputedStyle(kn).width) - TRACK_PAD;
+      kn.style.left = clamp(startLeft + dx, min, max) + 'px';
+      e.preventDefault();
+    }
+    function onMouseUp(e){
+      if (!dragging) return;
+      dragging = false;
+      settle(e.clientX);
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+      e.preventDefault();
+    }
+
+    // Touch drag
+    kn.addEventListener('touchstart', (e)=>{
+      const t = e.changedTouches[0];
+      dragging = true; moved = false;
+      startX = t.clientX;
+      startLeft = parseFloat(getComputedStyle(kn).left);
+      e.preventDefault();
+    }, {passive:false});
+
+    kn.addEventListener('touchmove', (e)=>{
+      if (!dragging) return;
+      const t = e.changedTouches[0];
+      const dx = t.clientX - startX;
+      if (Math.abs(dx) > DRAG_THRESHOLD) moved = true;
+      const min = TRACK_PAD;
+      const max = track.clientWidth - parseFloat(getComputedStyle(kn).width) - TRACK_PAD;
+      kn.style.left = clamp(startLeft + dx, min, max) + 'px';
+      e.preventDefault();
+    }, {passive:false});
+
+    kn.addEventListener('touchend', (e)=>{
+      if (!dragging) return;
+      dragging = false;
+      const t = e.changedTouches[0];
+      settle(t.clientX);
+      e.preventDefault();
+    }, {passive:false});
+
+    kn.addEventListener('touchcancel', ()=>{
+      dragging = false;
+    });
+
+    function settle(clientX){
+      const rect = track.getBoundingClientRect();
+      const knobW = parseFloat(getComputedStyle(kn).width);
+      const center = (parseFloat(getComputedStyle(kn).left) + knobW/2);
+      const goOn = center > (track.clientWidth/2);
+      if (goOn){
+        setActive(kn.dataset.id);
+        kn.style.left = `calc(100% - var(--knob-w) - ${TRACK_PAD}px)`;
+      } else {
+        setActive(null);
+        $$(".knob").forEach(k => k.style.left = `${TRACK_PAD}px`);
+      }
+      // suppress click that follows a drag
+      setTimeout(()=>{ moved = false; }, 0);
+    }
+  }
+
+  $$('.track').forEach(attachTrack);
+  $$('.knob').forEach(attachKnob);
+
+  // Keep knob positions on resize
+  new ResizeObserver(() => {
+    $$('.knob').forEach(kn=>{
+      kn.style.left = (kn.dataset.pos==="on") ? `calc(100% - var(--knob-w) - 12px)` : `12px`;
+    });
+  }).observe($('.frame'));
+</script>
+</body>
+</html>
