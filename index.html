@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Availability Sliders — Opulent Hardware</title>
+<link href="https://fonts.googleapis.com/css2?family=Saira:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --green:#00ff4c;
+    --amber:#ffb020;
+    --red:#ff3b30;
+
+    --radius: 18px;
+    --gap: clamp(12px, 2vw, 20px);
+    --pad: clamp(12px, 2vw, 18px);
+    --track-h: 72px;
+    --knob-h: 56px;
+    --knob-w: 96px;
+    --knob-radius: 14px;
+
+    /* frame halo color (set via [data-accent]) */
+    --frame-glow: transparent;
+  }
+
+  /* THEME TOKENS */
+  html[data-theme="dark"]{
+    --bg:#000;
+    --panel:#0f1115;
+    --panel-2:#141820;
+    --ink:#e8eef5;
+    --muted:#9fb2c9;
+  }
+  html[data-theme="light"]{
+    --bg:#f8fafc;
+    --panel:#e9eef6;
+    --panel-2:#dae3ef;
+    --ink:#1d2330;
+    --muted:#4c5a6b;
+  }
+
+  html[data-accent="green"]{ --frame-glow: color-mix(in oklab, var(--green) 85%, transparent); }
+  html[data-accent="amber"]{ --frame-glow: color-mix(in oklab, var(--amber) 85%, transparent); }
+  html[data-accent="red"]  { --frame-glow: color-mix(in oklab, var(--red)   85%, transparent); }
+
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"Saira", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    display:grid;
+    place-items:center;
+  }
+
+  .frame{
+    position:relative;
+    width:min(920px, 94vw);
+    border-radius: calc(var(--radius) + 6px);
+    overflow:hidden;
+    background:linear-gradient(180deg, var(--panel), var(--panel-2));
+    border:1px solid rgba(255,255,255,.06);
+    box-shadow: 0 12px 36px rgba(0,0,0,.45);
+    transition: box-shadow .28s ease;
+  }
+  html[data-accent] .frame{
+    box-shadow:
+      0 12px 36px rgba(0,0,0,.45),
+      0 0 80px 28px var(--frame-glow),
+      0 0 170px 70px var(--frame-glow),
+      0 0 280px 120px var(--frame-glow);
+  }
+
+  .content{ padding: clamp(14px, 2.2vw, 22px); }
+
+  .header{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    margin-bottom: var(--gap);
+  }
+  .title{ font-weight:700; letter-spacing:.2px; font-size: clamp(16px, 2.4vw, 22px); }
+  .title span { font-weight:600; opacity:0.8; font-size:0.9em; }
+  .title span .oh { font-weight:800; letter-spacing:0.5px; }
+
+  .modes{
+    display:flex; gap:8px;
+    background: rgba(255,255,255,.05);
+    border:1px solid rgba(255,255,255,.10);
+    border-radius:999px; padding:6px;
+  }
+  html[data-theme="light"] .modes{
+    background: rgba(0,0,0,.05);
+    border-color: rgba(0,0,0,.08);
+  }
+  .modes button{
+    appearance:none; border:0; background:transparent; color:var(--ink);
+    padding:8px 12px; border-radius:999px; font-weight:600; cursor:pointer;
+    opacity:.75; transition:opacity .2s, background .2s;
+  }
+  .modes button[aria-pressed="true"]{ background:rgba(255,255,255,.10); opacity:1; }
+  html[data-theme="light"] .modes button[aria-pressed="true"]{ background:rgba(0,0,0,.08); }
+
+  .sliders{ display:grid; grid-template-columns:1fr; gap: var(--gap); }
+  .card{
+    background:rgba(255,255,255,.09);
+    border:1px solid rgba(255,255,255,.12);
+    padding: var(--pad);
+    border-radius: var(--radius);
+    backdrop-filter: blur(2px);
+  }
+  html[data-theme="light"] .card{
+    background:rgba(0,0,0,.05);
+    border-color: rgba(0,0,0,.10);
+  }
+
+  .row{
+    display:grid; grid-template-columns: 160px 1fr;
+    align-items:center; gap:14px;
+  }
+  .label{ font-weight:700; letter-spacing:.3px; color:var(--ink); }
+
+  .track{
+    position:relative; height: var(--track-h);
+    background:linear-gradient(180deg, rgba(255,255,255,.14), rgba(0,0,0,.18));
+    border-radius: calc(var(--knob-radius) + 10px);
+    border:1px solid rgba(255,255,255,.18); overflow:hidden;
+  }
+  html[data-theme="light"] .track{
+    background:linear-gradient(180deg, rgba(255,255,255,.7), rgba(0,0,0,.08));
+    border-color: rgba(0,0,0,.15);
+  }
+  .rail{
+    position:absolute; inset: 22px 12px; border-radius: 12px;
+    background: rgba(255,255,255,.08);
+  }
+  html[data-theme="light"] .rail{ background: rgba(0,0,0,.08); }
+  .rail::before{
+    content:""; position:absolute; inset:0; border-radius:inherit;
+    transform-origin:left center; transform: scaleX(var(--pct, 0));
+    transition: transform .25s ease;
+  }
+  .track[data-state="green"] .rail::before{ background: var(--green); }
+  .track[data-state="amber"] .rail::before{ background: var(--amber); }
+  .track[data-state="red"]   .rail::before{ background: var(--red); }
+
+  .knob{
+    position:absolute; top:50%; translate:0 -50%;
+    height: var(--knob-h); width: var(--knob-w); border-radius: var(--knob-radius);
+    background:linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.04));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.22), inset 0 -6px 20px rgba(0,0,0,.34), 0 4px 18px rgba(0,0,0,.25);
+    border:1px solid rgba(255,255,255,.20); cursor:pointer;
+    transition: left .25s cubic-bezier(.2,.8,.2,1), outline-color .25s;
+    outline: 2px solid transparent;
+  }
+  html[data-theme="light"] .knob{
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.7), inset 0 -6px 20px rgba(0,0,0,.12), 0 4px 18px rgba(0,0,0,.12);
+    border-color: rgba(0,0,0,.12);
+  }
+  .knob:active{ outline-color: rgba(255,255,255,.25); }
+
+  .track{ --left-off: 12px; --left-on: calc(100% - var(--knob-w) - 12px); }
+  .knob[data-pos="off"]{ left: var(--left-off); }
+  .knob[data-pos="on"]{  left: var(--left-on); }
+</style>
+</head>
+<body>
+  <div class="frame" role="application" aria-label="Availability status sliders">
+    <div class="content">
+      <div class="header">
+        <div class="title">
+          Availability <span>by <span class="oh">OPULENT HARDWARE</span></span>
+        </div>
+        <div class="modes" role="group" aria-label="Theme">
+          <button id="btnLight" aria-pressed="false" title="Light mode">Light</button>
+          <button id="btnDark"  aria-pressed="true"  title="Dark mode (pure black)">Dark</button>
+        </div>
+      </div>
+
+      <div class="sliders">
+        <div class="card">
+          <div class="row">
+            <div class="label">Available</div>
+            <div class="track" data-state="green" aria-label="Available slider">
+              <div class="rail"></div>
+              <button class="knob" data-pos="off" data-id="green" aria-pressed="false"></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="row">
+            <div class="label">Important Only</div>
+            <div class="track" data-state="amber" aria-label="Important only slider">
+              <div class="rail"></div>
+              <button class="knob" data-pos="off" data-id="amber" aria-pressed="false"></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="row">
+            <div class="label">Do Not Disturb</div>
+            <div class="track" data-state="red" aria-label="Do not disturb slider">
+              <div class="rail"></div>
+              <button class="knob" data-pos="off" data-id="red" aria-pressed="false"></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const $ = (q, root=document) => root.querySelector(q);
+  const $$ = (q, root=document) => [...root.querySelectorAll(q)];
+
+  const themeBtns = { light: $("#btnLight"), dark: $("#btnDark") };
+  function setTheme(name){
+    document.documentElement.setAttribute("data-theme", name);
+    Object.entries(themeBtns).forEach(([k,btn]) => btn.setAttribute("aria-pressed", String(k===name)));
+    try{ localStorage.setItem("availability.theme", name); }catch(e){}
+    const acc = localStorage.getItem("availability.accent") || "none";
+    setAccent(acc);
+  }
+  (function initTheme(){
+    setTheme(localStorage.getItem("availability.theme") || "dark");
+  })();
+  themeBtns.light.addEventListener("click", ()=> setTheme("light"));
+  themeBtns.dark .addEventListener("click", ()=> setTheme("dark"));
+
+  function setAccent(accent){
+    if(accent && accent !== "none"){
+      document.documentElement.setAttribute("data-accent", accent);
+      try{ localStorage.setItem("availability.accent", accent); }catch(e){}
+    } else {
+      document.documentElement.removeAttribute("data-accent");
+      try{ localStorage.setItem("availability.accent", "none"); }catch(e){}
+    }
+  }
+
+  const knobs = $$(".knob");
+
+  function setActive(state){
+    knobs.forEach(kn => {
+      const isTarget = state && kn.dataset.id === state;
+      kn.dataset.pos = isTarget ? "on" : "off";
+      kn.setAttribute("aria-pressed", String(isTarget));
+      const track = kn.closest(".track");
+      track.style.setProperty("--pct", isTarget ? 1 : 0);
+    });
+
+    setAccent(state ? state : "none");
+
+    try{ localStorage.setItem("availability.state", state || "none"); }catch(e){}
+    try{
+      window.parent && window.parent.postMessage(
+        { widget:"availability-sliders", state: state || "none",
+          theme: document.documentElement.getAttribute("data-theme") },
+        "*"
+      );
+    }catch(e){}
+  }
+
+  (function initState(){
+    const saved = localStorage.getItem("availability.state");
+    const state = (saved && saved !== "none") ? saved : null;
+    setActive(state);
+    requestAnimationFrame(()=> {
+      knobs.forEach(kn => kn.style.left = (kn.dataset.pos==="on") ? "calc(100% - var(--knob-w) - 12px)" : "12px");
+    });
+  })();
+
+  knobs.forEach(kn => {
+    kn.addEventListener("click", ()=>{
+      const id = kn.dataset.id;
+      const currentlyOn = kn.dataset.pos === "on";
+      if(currentlyOn){
+        setActive(null);
+        kn.style.left = `12px`;
+      }else{
+        setActive(id);
+        $$(".knob").forEach(k => {
+          k.style.left = (k===kn) ? `calc(100% - var(--knob-w) - 12px)` : `12px`;
+        });
+      }
+    });
+
+    let dragging=false, startX=0, startLeft=0;
+    kn.addEventListener("pointerdown", (ev)=>{
+      dragging=true; startX=ev.clientX;
+      startLeft = parseFloat(getComputedStyle(kn).left);
+      kn.setPointerCapture(ev.pointerId);
+    });
+    kn.addEventListener("pointermove", (ev)=>{
+      if(!dragging) return;
+      const dx = ev.clientX - startX;
+      const min = 12;
+      const max = kn.parentElement.clientWidth - parseFloat(getComputedStyle(kn).width) - 12;
+      const next = Math.max(min, Math.min(startLeft + dx, max));
+      kn.style.left = next + "px";
+    });
+    kn.addEventListener("pointerup", ()=>{
+      if(!dragging) return; dragging=false;
+      const trackW = kn.parentElement.clientWidth;
+      const knobW = parseFloat(getComputedStyle(kn).width);
+      const center = parseFloat(getComputedStyle(kn).left) + knobW/2;
+      const goOn = center > trackW/2;
+      if(goOn){
+        setActive(kn.dataset.id);
+        kn.style.left = `calc(100% - var(--knob-w) - 12px)`;
+      }else{
+        setActive(null);
+        $$(".knob").forEach(k => k.style.left = `12px`);
+      }
+    });
+  });
+
+  new ResizeObserver(() => {
+    knobs.forEach(kn=>{
+      kn.style.left = (kn.dataset.pos==="on") ? `calc(100% - var(--knob-w) - 12px)` : `12px`;
+    });
+  }).observe($(".frame"));
+</script>
+</body>
+</html>
