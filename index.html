@@ -22,23 +22,15 @@
     --frame-glow: transparent;
   }
 
-  /* THEME */
+  /* THEMES */
   html[data-theme="dark"]{
-    --bg:#000;
-    --panel:#0f1115;
-    --panel-2:#141820;
-    --ink:#e8eef5;
-    --muted:#9fb2c9;
+    --bg:#000;  --panel:#0f1115; --panel-2:#141820; --ink:#e8eef5; --muted:#9fb2c9;
   }
   html[data-theme="light"]{
-    --bg:#f8fafc;
-    --panel:#e9eef6;
-    --panel-2:#dae3ef;
-    --ink:#1d2330;
-    --muted:#4c5a6b;
+    --bg:#f8fafc; --panel:#e9eef6; --panel-2:#dae3ef; --ink:#1d2330; --muted:#4c5a6b;
   }
 
-  /* Frame halo */
+  /* Halo colors (frame only) */
   html[data-accent="green"]{ --frame-glow: color-mix(in oklab, var(--green) 85%, transparent); }
   html[data-accent="amber"]{ --frame-glow: color-mix(in oklab, var(--amber) 85%, transparent); }
   html[data-accent="red"]  { --frame-glow: color-mix(in oklab, var(--red)   85%, transparent); }
@@ -49,11 +41,15 @@
     margin:0; background:var(--bg); color:var(--ink);
     font-family:"Saira", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
     display:grid; place-items:center;
+
+    /* Touch-first defaults for embedded webviews */
     -webkit-user-select:none; user-select:none;
     -webkit-touch-callout:none;
-    pointer-events:auto; /* ensure iframe can interact */
+    touch-action: manipulation;     /* taps only; no pans */
+    pointer-events:auto;            /* ensure iframe accepts input */
   }
 
+  /* WIDGET FRAME (gets the colored halo only) */
   .frame{
     position:relative;
     width:min(920px, 94vw);
@@ -94,7 +90,7 @@
     background: rgba(0,0,0,.05);
     border-color: rgba(0,0,0,.08);
   }
-  .modes button{
+  .btn{
     appearance:none; border:0; background:transparent; color:var(--ink);
     padding:8px 12px; border-radius:999px; font-weight:600; cursor:pointer;
     opacity:.75; transition:opacity .2s, background .2s;
@@ -102,8 +98,8 @@
     touch-action: manipulation;
     pointer-events:auto;
   }
-  .modes button[aria-pressed="true"]{ background:rgba(255,255,255,.10); opacity:1; }
-  html[data-theme="light"] .modes button[aria-pressed="true"]{ background:rgba(0,0,0,.08); }
+  .btn[aria-pressed="true"]{ background:rgba(255,255,255,.10); opacity:1; }
+  html[data-theme="light"] .btn[aria-pressed="true"]{ background:rgba(0,0,0,.08); }
 
   .sliders{ display:grid; grid-template-columns:1fr; gap: var(--gap); }
   .card{
@@ -118,19 +114,22 @@
     border-color: rgba(0,0,0,.10);
   }
 
+  /* Row: label + track (interior stays neutral) */
   .row{
     display:grid; grid-template-columns: 160px 1fr;
     align-items:center; gap:14px;
   }
   .label{ font-weight:700; letter-spacing:.3px; color:var(--ink); }
 
-  /* Track */
+  /* TRACK (tap anywhere to toggle ON/OFF) */
   .track{
     position:relative; height: var(--track-h);
     background:linear-gradient(180deg, rgba(255,255,255,.14), rgba(0,0,0,.18));
     border-radius: calc(var(--knob-radius) + 10px);
-    border:1px solid rgba(255,255,255,.18); overflow:hidden;
-    touch-action: manipulation;         /* tap-only; no panning */
+    border:1px solid rgba(255,255,255,.18);
+    overflow:hidden;
+
+    touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
     cursor:pointer; pointer-events:auto;
   }
@@ -138,11 +137,14 @@
     background:linear-gradient(180deg, rgba(255,255,255,.7), rgba(0,0,0,.08));
     border-color: rgba(0,0,0,.15);
   }
+
   .rail{
     position:absolute; inset: 22px 12px; border-radius: 12px;
     background: rgba(255,255,255,.08);
   }
   html[data-theme="light"] .rail{ background: rgba(0,0,0,.08); }
+
+  /* Active color fill (left-to-right) */
   .rail::before{
     content:""; position:absolute; inset:0; border-radius:inherit;
     transform-origin:left center; transform: scaleX(var(--pct, 0));
@@ -152,15 +154,14 @@
   .track[data-state="amber"] .rail::before{ background: var(--amber); }
   .track[data-state="red"]   .rail::before{ background: var(--red); }
 
-  /* Knob (visual only; taps handled on .track for simplicity) */
+  /* Knob is visual only; taps handled on .track to keep it simple */
   .knob{
     position:absolute; top:50%; translate:0 -50%;
     height: var(--knob-h); width: var(--knob-w); border-radius: var(--knob-radius);
     background:linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.04));
     box-shadow: inset 0 1px 0 rgba(255,255,255,.22), inset 0 -6px 20px rgba(0,0,0,.34), 0 4px 18px rgba(0,0,0,.25);
     border:1px solid rgba(255,255,255,.20);
-    outline: 2px solid transparent;
-    pointer-events:none;  /* ensures the track gets the tap in iCUE */
+    pointer-events:none;  /* always let the track receive the tap */
     transition: left .16s ease;
   }
   html[data-theme="light"] .knob{
@@ -168,47 +169,51 @@
     border-color: rgba(0,0,0,.12);
   }
 
+  /* ON/OFF positions (no drag, just snap) */
   .track{ --left-off: 12px; --left-on: calc(100% - var(--knob-w) - 12px); }
   .knob[data-pos="off"]{ left: var(--left-off); }
   .knob[data-pos="on"]{  left: var(--left-on); }
 </style>
 </head>
 <body>
-  <div class="frame" role="application" aria-label="Availability status sliders">
+  <div class="frame" role="application" aria-label="Availability status">
     <div class="content">
       <div class="header">
         <div class="title">
           Availability <span class="by">by <span class="oh">OPULENT HARDWARE</span></span>
         </div>
-        <div class="modes" role="group" aria-label="Theme" id="modes">
-          <button id="btnLight" aria-pressed="false" title="Light mode">Light</button>
-          <button id="btnDark"  aria-pressed="true"  title="Dark mode (pure black)">Dark</button>
+        <div class="modes" role="group" aria-label="Theme">
+          <button class="btn" id="btnLight" aria-pressed="false" title="Light mode">Light</button>
+          <button class="btn" id="btnDark"  aria-pressed="true"  title="Dark mode">Dark</button>
         </div>
       </div>
 
-      <div class="sliders" id="sliders">
+      <div class="sliders">
+        <!-- GREEN -->
         <div class="card">
           <div class="row">
             <div class="label">Available</div>
-            <div class="track" data-state="green" data-id="green" aria-label="Available">
+            <div class="track" data-id="green" data-state="green" aria-label="Available">
               <div class="rail"></div>
               <div class="knob" data-pos="off"></div>
             </div>
           </div>
         </div>
+        <!-- AMBER -->
         <div class="card">
           <div class="row">
             <div class="label">Important Only</div>
-            <div class="track" data-state="amber" data-id="amber" aria-label="Important Only">
+            <div class="track" data-id="amber" data-state="amber" aria-label="Important Only">
               <div class="rail"></div>
               <div class="knob" data-pos="off"></div>
             </div>
           </div>
         </div>
+        <!-- RED -->
         <div class="card">
           <div class="row">
             <div class="label">Do Not Disturb</div>
-            <div class="track" data-state="red" data-id="red" aria-label="Do Not Disturb">
+            <div class="track" data-id="red" data-state="red" aria-label="Do Not Disturb">
               <div class="rail"></div>
               <div class="knob" data-pos="off"></div>
             </div>
@@ -219,11 +224,28 @@
   </div>
 
 <script>
-  /* Utilities */
+  /* ========= Touch-first tap helper (robust in iframes) ========= */
+  function addTap(el, handler){
+    // De-dupe across pointerup/touchend/mouseup/click
+    let last = 0;
+    const wrap = (ev) => {
+      const now = performance.now ? performance.now() : Date.now();
+      if (now - last < 220) return; // ignore duplicates within ~1/5s
+      last = now;
+      handler(ev);
+    };
+    // Pointer is preferred in many embedded Chromium views
+    el.addEventListener("pointerup", wrap, {capture:true});
+    // Fallbacks for environments that skip pointer events
+    el.addEventListener("touchend", wrap, {capture:true, passive:true});
+    el.addEventListener("mouseup", wrap, {capture:true});
+    el.addEventListener("click", wrap, {capture:true});
+  }
+
   const $  = (q, r=document) => r.querySelector(q);
   const $$ = (q, r=document) => [...r.querySelectorAll(q)];
 
-  /* Theme — pointerup for tap */
+  /* ========= Theme ========= */
   const btnLight = $("#btnLight");
   const btnDark  = $("#btnDark");
 
@@ -232,22 +254,17 @@
     btnLight.setAttribute("aria-pressed", String(name==="light"));
     btnDark .setAttribute("aria-pressed", String(name==="dark"));
     try{ localStorage.setItem("availability.theme", name); }catch(e){}
+    // keep halo color as-is
     const acc = localStorage.getItem("availability.accent") || "none";
     setAccent(acc);
   }
   setTheme(localStorage.getItem("availability.theme") || "dark");
 
-  function addTap(el, handler){
-    // Pointer-first: pointerup is emitted for mouse + touch in CEF
-    el.addEventListener("pointerup", handler, {capture:true});
-    // Fallback (rare): also listen to click
-    el.addEventListener("click", handler, {capture:true});
-  }
   addTap(btnLight, ()=> setTheme("light"));
   addTap(btnDark , ()=> setTheme("dark"));
 
-  /* Accent (frame halo only) */
-  function setAccent(accent){
+  /* ========= Accent / Halo (frame only) ========= */
+  function setAccent(accent){ // 'green' | 'amber' | 'red' | 'none'
     if(accent && accent !== "none"){
       document.documentElement.setAttribute("data-accent", accent);
       try{ localStorage.setItem("availability.accent", accent); }catch(e){}
@@ -257,44 +274,44 @@
     }
   }
 
-  /* State — exclusive ON, single tap toggles that one; tapping active turns all OFF */
+  /* ========= State (exclusive ON, or ALL OFF) ========= */
   const tracks = $$(".track");
 
   function setActive(state){ // 'green'|'amber'|'red'|null
     tracks.forEach(tr => {
-      const knob = $(".knob", tr);
+      const knob = tr.querySelector(".knob");
       const on = state && tr.dataset.id === state;
-      knob.dataset.pos = on ? "on" : "off";
       tr.style.setProperty("--pct", on ? 1 : 0);
+      knob.dataset.pos = on ? "on" : "off";
     });
     setAccent(state ? state : "none");
     try{ localStorage.setItem("availability.state", state || "none"); }catch(e){}
-    // Optional: notify host iCUE
-    // try{ window.parent.postMessage({widget:"availability", state: state || "none"}, "*"); }catch(e){}
+    // Optional host bridge:
+    // try{ window.parent && window.parent.postMessage({widget:"availability", state: state || "none"}, "*"); }catch(e){}
   }
 
-  function currentState(){
+  function getSavedState(){
     const s = localStorage.getItem("availability.state");
     return (s && s !== "none") ? s : null;
   }
 
-  setActive(currentState());
+  // Initialize
+  setActive(getSavedState());
 
+  // Single-tap anywhere on a track toggles its state
   tracks.forEach(tr => {
-    addTap(tr, (e)=>{
-      // if iCUE sends synthetic mouseup without pointerdown, still toggle
+    addTap(tr, ()=>{
       const id = tr.dataset.id;
-      const active = (currentState() === id);
-      setActive(active ? null : id);
-      // Do NOT preventDefault — let iCUE webview deliver clicks freely
+      const isActive = (getSavedState() === id);
+      setActive(isActive ? null : id);
     });
   });
 
-  // Defensive: ensure everything is interactable if parent styles are odd
+  // Ensure everything remains interactable (defensive against host CSS)
   (function ensureInteractable(){
     document.documentElement.style.pointerEvents = 'auto';
     document.body.style.pointerEvents = 'auto';
-    $$(".track,.modes button").forEach(el => el.style.pointerEvents = 'auto');
+    [...document.querySelectorAll('.track,.btn')].forEach(el => el.style.pointerEvents = 'auto');
   })();
 </script>
 </body>
