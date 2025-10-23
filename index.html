@@ -22,7 +22,6 @@
     --frame-glow: transparent;
   }
 
-  /* THEMES */
   html[data-theme="dark"]{
     --bg:#000;  --panel:#0f1115; --panel-2:#141820; --ink:#e8eef5; --muted:#9fb2c9;
   }
@@ -30,7 +29,6 @@
     --bg:#f8fafc; --panel:#e9eef6; --panel-2:#dae3ef; --ink:#1d2330; --muted:#4c5a6b;
   }
 
-  /* Halo colors (frame only) */
   html[data-accent="green"]{ --frame-glow: color-mix(in oklab, var(--green) 85%, transparent); }
   html[data-accent="amber"]{ --frame-glow: color-mix(in oklab, var(--amber) 85%, transparent); }
   html[data-accent="red"]  { --frame-glow: color-mix(in oklab, var(--red)   85%, transparent); }
@@ -42,14 +40,15 @@
     font-family:"Saira", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
     display:grid; place-items:center;
 
-    /* Touch-first defaults for embedded webviews */
     -webkit-user-select:none; user-select:none;
     -webkit-touch-callout:none;
-    touch-action: manipulation;     /* taps only; no pans */
-    pointer-events:auto;            /* ensure iframe accepts input */
+    /* Allow quick taps, no gestures */
+    touch-action: manipulation;
+    pointer-events:auto;
+    /* Force arrow cursor across the widget */
+    cursor: default !important;
   }
 
-  /* WIDGET FRAME (gets the colored halo only) */
   .frame{
     position:relative;
     width:min(920px, 94vw);
@@ -92,7 +91,9 @@
   }
   .btn{
     appearance:none; border:0; background:transparent; color:var(--ink);
-    padding:8px 12px; border-radius:999px; font-weight:600; cursor:pointer;
+    padding:8px 12px; border-radius:999px; font-weight:600;
+    /* arrow cursor, not hand */
+    cursor: default !important;
     opacity:.75; transition:opacity .2s, background .2s;
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
@@ -114,14 +115,12 @@
     border-color: rgba(0,0,0,.10);
   }
 
-  /* Row: label + track (interior stays neutral) */
   .row{
     display:grid; grid-template-columns: 160px 1fr;
     align-items:center; gap:14px;
   }
   .label{ font-weight:700; letter-spacing:.3px; color:var(--ink); }
 
-  /* TRACK (tap anywhere to toggle ON/OFF) */
   .track{
     position:relative; height: var(--track-h);
     background:linear-gradient(180deg, rgba(255,255,255,.14), rgba(0,0,0,.18));
@@ -131,7 +130,9 @@
 
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
-    cursor:pointer; pointer-events:auto;
+    /* arrow, not hand */
+    cursor: default !important;
+    pointer-events:auto;
   }
   html[data-theme="light"] .track{
     background:linear-gradient(180deg, rgba(255,255,255,.7), rgba(0,0,0,.08));
@@ -145,38 +146,32 @@
   }
   html[data-theme="light"] .rail{ background: rgba(0,0,0,.08); }
 
-  /* Active color fill (left-to-right) */
   .rail::before{
     content:""; position:absolute; inset:0; border-radius:inherit;
     transform-origin:left center; transform: scaleX(var(--pct, 0));
-    transition: transform .16s ease;
+    transition: transform .12s ease;
   }
   .track[data-state="green"] .rail::before{ background: var(--green); }
   .track[data-state="amber"] .rail::before{ background: var(--amber); }
   .track[data-state="red"]   .rail::before{ background: var(--red); }
 
-  /* Knob is visual only; taps handled on .track to keep it simple */
   .knob{
     position:absolute; top:50%; translate:0 -50%;
     height: var(--knob-h); width: var(--knob-w); border-radius: var(--knob-radius);
     background:linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.04));
     box-shadow: inset 0 1px 0 rgba(255,255,255,.22), inset 0 -6px 20px rgba(0,0,0,.34), 0 4px 18px rgba(0,0,0,.25);
     border:1px solid rgba(255,255,255,.20);
-    pointer-events:none;  /* always let the track receive the tap */
-    transition: left .16s ease;
+    pointer-events:none;
+    transition: left .12s ease;
   }
   html[data-theme="light"] .knob{
     box-shadow: inset 0 1px 0 rgba(255,255,255,.7), inset 0 -6px 20px rgba(0,0,0,.12), 0 4px 18px rgba(0,0,0,.12);
     border-color: rgba(0,0,0,.12);
   }
 
-  /* ON/OFF positions (no drag, just snap) */
   .track{ --left-off: 12px; --left-on: calc(100% - var(--knob-w) - 12px); }
   .knob[data-pos="off"]{ left: var(--left-off); }
   .knob[data-pos="on"]{  left: var(--left-on); }
-
-  /* Focus (for keyboard use in desktop) */
-  .track:focus-visible{ outline:2px solid rgba(255,255,255,.3); outline-offset:2px; }
 </style>
 </head>
 <body>
@@ -193,31 +188,30 @@
       </div>
 
       <div class="sliders">
-        <!-- GREEN -->
         <div class="card">
           <div class="row">
             <div class="label">Available</div>
-            <div class="track" data-id="green" data-state="green" aria-label="Available" role="switch" aria-checked="false" tabindex="0">
+            <div class="track" data-id="green" data-state="green" aria-label="Available">
               <div class="rail"></div>
               <div class="knob" data-pos="off"></div>
             </div>
           </div>
         </div>
-        <!-- AMBER -->
+
         <div class="card">
           <div class="row">
             <div class="label">Important Only</div>
-            <div class="track" data-id="amber" data-state="amber" aria-label="Important Only" role="switch" aria-checked="false" tabindex="0">
+            <div class="track" data-id="amber" data-state="amber" aria-label="Important Only">
               <div class="rail"></div>
               <div class="knob" data-pos="off"></div>
             </div>
           </div>
         </div>
-        <!-- RED -->
+
         <div class="card">
           <div class="row">
             <div class="label">Do Not Disturb</div>
-            <div class="track" data-id="red" data-state="red" aria-label="Do Not Disturb" role="switch" aria-checked="false" tabindex="0">
+            <div class="track" data-id="red" data-state="red" aria-label="Do Not Disturb">
               <div class="rail"></div>
               <div class="knob" data-pos="off"></div>
             </div>
@@ -228,103 +222,84 @@
   </div>
 
 <script>
-  /* ========= Tap helper (pointer-first; robust in iframes/webviews) ========= */
-  function addTap(el, handler){
-    let last = 0;
-    const call = (ev) => {
-      const now = performance.now ? performance.now() : Date.now();
-      if (now - last < 150) return;  // dedupe burst
-      last = now;
-      handler(ev);
-    };
-    // Pointer is best in CEF/Electron/iCUE
-    el.addEventListener("pointerdown", call);
-    // Fallbacks
-    el.addEventListener("touchstart", call, {passive:true});
-    el.addEventListener("mousedown", call);
-    el.addEventListener("click", call); // final fallback
-  }
-
+  // Helpers
   const $  = (q, r=document) => r.querySelector(q);
   const $$ = (q, r=document) => [...r.querySelectorAll(q)];
 
-  /* ========= Theme ========= */
-  const btnLight = $("#btnLight");
-  const btnDark  = $("#btnDark");
-
-  function setTheme(name){
-    document.documentElement.setAttribute("data-theme", name);
-    btnLight.setAttribute("aria-pressed", String(name==="light"));
-    btnDark .setAttribute("aria-pressed", String(name==="dark"));
-    try{ localStorage.setItem("availability.theme", name); }catch(e){}
-    const acc = localStorage.getItem("availability.accent") || "none";
-    setAccent(acc);
-  }
-  setTheme(localStorage.getItem("availability.theme") || "dark");
-
-  addTap(btnLight, ()=> setTheme("light"));
-  addTap(btnDark , ()=> setTheme("dark"));
-
-  /* ========= Accent / Halo (frame only) ========= */
-  function setAccent(accent){ // 'green' | 'amber' | 'red' | 'none'
-    if(accent && accent !== "none"){
+  // State management
+  const tracks = $$(".track");
+  function setAccent(accent){
+    if(accent){
       document.documentElement.setAttribute("data-accent", accent);
       try{ localStorage.setItem("availability.accent", accent); }catch(e){}
-    } else {
+    }else{
       document.documentElement.removeAttribute("data-accent");
       try{ localStorage.setItem("availability.accent", "none"); }catch(e){}
     }
   }
-
-  /* ========= State (exclusive ON, or ALL OFF) ========= */
-  const tracks = $$(".track");
-
   function setActive(state){ // 'green'|'amber'|'red'|null
     tracks.forEach(tr => {
       const knob = tr.querySelector(".knob");
       const on = state && tr.dataset.id === state;
       tr.style.setProperty("--pct", on ? 1 : 0);
       knob.dataset.pos = on ? "on" : "off";
-      tr.setAttribute("aria-checked", String(!!on));
     });
-    setAccent(state ? state : "none");
+    setAccent(state || null);
     try{ localStorage.setItem("availability.state", state || "none"); }catch(e){}
-    // Optional host bridge:
-    // try{ window.parent && window.parent.postMessage({widget:"availability", state: state || "none"}, "*"); }catch(e){}
+    // Optional bridge:
+    // try{ window.parent.postMessage({widget:"availability", state: state || "none"}, "*"); }catch(e){}
   }
-
   function getSavedState(){
     const s = localStorage.getItem("availability.state");
     return (s && s !== "none") ? s : null;
   }
+  function setTheme(name){
+    document.documentElement.setAttribute("data-theme", name);
+    $("#btnLight").setAttribute("aria-pressed", String(name==="light"));
+    $("#btnDark").setAttribute("aria-pressed", String(name==="dark"));
+    try{ localStorage.setItem("availability.theme", name); }catch(e){}
+    const acc = localStorage.getItem("availability.accent") || "none";
+    setAccent(acc !== "none" ? acc : null);
+  }
 
-  // Initialize
+  // Init
+  setTheme(localStorage.getItem("availability.theme") || "dark");
   setActive(getSavedState());
 
-  // Single tap/click anywhere on a track toggles its state
-  tracks.forEach(tr => {
-    addTap(tr, ()=> {
-      const id = tr.dataset.id;
-      const isActive = (getSavedState() === id);
-      setActive(isActive ? null : id);
-    });
-    // Keyboard support
-    tr.addEventListener("keydown", (e)=>{
-      if(e.key === "Enter" || e.key === " ") { e.preventDefault(); tr.click(); }
-    });
-  });
+  // === Single, global POINTERDOWN handler (touch-first; iframe-safe) ===
+  // We deliberately DO NOT use click/mouseup/pointerup; some webviews swallow them.
+  document.addEventListener("pointerdown", (e) => {
+    // Stop text selection/gesture side-effects on touch
+    e.preventDefault?.();
 
-  // Defensive: keep interactable even if host injects CSS
+    const t = e.target.closest?.(".track, .btn");
+    if(!t) return;
+
+    if(t.classList.contains("btn")){
+      if(t.id === "btnLight") setTheme("light");
+      if(t.id === "btnDark")  setTheme("dark");
+      return;
+    }
+    if(t.classList.contains("track")){
+      const id = t.dataset.id;
+      const current = getSavedState();
+      setActive(current === id ? null : id);
+      return;
+    }
+  }, {capture:true}); // capture to beat host handlers
+
+  // Keep interactable (defensive against host CSS)
   (function ensureInteractable(){
     document.documentElement.style.pointerEvents = 'auto';
     document.body.style.pointerEvents = 'auto';
     [...document.querySelectorAll('.track,.btn')].forEach(el => {
       el.style.pointerEvents = 'auto';
       el.style.touchAction = 'manipulation';
+      el.style.cursor = 'default';
     });
   })();
 
-  // iOS “pinch to zoom” gesture can swallow taps; prevent gesturestart if present
+  // Prevent iOS gesture from stealing taps
   window.addEventListener?.("gesturestart", e => { e.preventDefault?.(); }, {passive:false});
 </script>
 </body>
